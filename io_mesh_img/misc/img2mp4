@@ -1,0 +1,217 @@
+#!/usr/bin/pbsmake -f
+# This turns a HiRISE DTM in .IMG format into a series of videos using
+# blender and ffmpeg
+#   .IMG -> .blend -> *.png -> .mp4
+#
+#
+
+# Where do we find the .IMG to convert?
+DTM_IMG_PATH?=/HiRISE/Data/DTM/
+
+# Defaults
+FRAMES_PER_ORBIT?=288
+KEEP_BLEND?=false
+KEEP_FRAMES?=false
+OUTPUT_DIR?=/HiRISE/Users/$(id -u -n)/DTM_blender_rendered
+
+# Default frame rate if we are going to render a .blend
+ANIM_FRAMERATE?=25
+
+# Blender auto import script path
+AUTO_IMPORT_SCRIPT?=/opt/local/share/auto_import_dtm.py
+
+# This is not straight-forward to mess with currently
+IMAGE_FORMAT="%04d.png"
+
+## Default target to describe how to use this file
+help::local_target:
+	@queue blender
+	@Mail_Points a
+	@Resource_List cput=00:00:30,walltime=0:00:30,mem=1g
+	@Output_Path localhost:${PBS_O_WORKDIR}/
+	@Shell_Path_List /bin/bash
+	@Join_Path oe
+	echo Quick Usage/Examples:
+	echo '1)' create movies of a released IMG file:
+	echo '  ' $DTM_IMG_PATH/.../DTEEC_006774_2020_007341_2020_A01.IMG
+	echo '  ' img2mp4 orbits_DTEEC_006774_2020_007341_2020_A01
+	echo
+	echo '2)' render a modified .blend file:
+	echo '  ' DTEEC_006774_2020_007341_2020_A01-FlyAround.blend
+	echo '  ' img2mp4 orbits_DTEEC_006774_2020_007341_2020_A01-FlyAround
+	echo
+	echo '3)' create orbits for an unreleased .IMG file:
+	echo '  ' /path/to/DTEEC_000000_0000_000000_0000_A01.IMG
+	echo '  ' env DTM_IMG_PATH=/path/to/ img2mp4 orbits_DTEEC_000000_0000_000000_0000_A01
+	echo
+	echo '3)' render a .blend in a non-standard location:
+	echo '  ' /path/to/DTEEC_000000_0000_000000_0000_A01-modified.blend
+	echo '  ' 'cd /path/to/;img2mp4 orbits_DTEEC_000000_0000_000000_0000_A01'
+	echo
+
+################################################################################
+## Create a .blend from a .IMG
+################################################################################
+%.blend:
+## Some defaults which should cover all conversion jobs (hopefully)
+	@queue blender
+	@Mail_Points a
+	@Resource_List cput=00:30:00,walltime=1:00:00,mem=4g,file=1gb
+	@Output_Path localhost:${PBS_O_WORKDIR}/
+	@Shell_Path_List /bin/bash
+	@Join_Path oe
+	set -o nounset
+	set -o errexit
+	cd $PBS_O_WORKDIR
+
+	function die {
+	  echo error: "$@" >&2
+	  exit -1
+	}
+
+	if [ -z "${DTM_IMG=}" ]; then
+	  DTM_IMG=$(find $DTM_IMG_PATH -name ${pm_target_match}*.IMG | tail -1 || true)
+	  [ -z "${DTM_IMG}" ] && {
+	    echo could not find ${pm_target_match}*.IMG in $DTM_IMG_PATH 1>&2
+	    ls $DTM_IMG_PATH
+	    echo $DTM_IMG
+	    exit -1
+	  }
+	fi
+
+	# Where is the actual file?
+	DTM_IMG_REAL=$(readlink $DTM_IMG 2> /dev/null || true)
+	[ -n "$DTM_IMG_REAL" ] && DTM_IMG=$DTM_IMG_REAL
+
+	# Attempt to find a texture if none is specified
+	if [ -z "${DTM_TEXTURE=}" ]; then
+
+	  # Attempt to locate the EXTRAS directory for the specified DTM. If this is
+	  # already set then it will simply use the supplied env for DTM_EXTRAS_DIR
+	  if [ -z "${DTM_EXTRAS_DIR=}" ]; then
+	    DTM_EXTRAS_DIR=$(dirname $DTM_IMG)
+	    DTM_EXTRAS_DIR=${DTM_EXTRAS_DIR//DTM/EXTRAS\/DTM}
+	    # Sometimes EXTRAS is actually Extras
+	    [[ -x $DTM_EXTRAS_DIR ]] || DTM_EXTRAS_DIR=${DTM_EXTRAS_DIR//EXTRAS/Extras}
+	  fi
+
+	  echo DTM_EXTRAS_DIR: $DTM_EXTRAS_DIR
+
+	  # We need an EXTRAS dir in order to find an image to drape over the DTM
+	  [[ -x $DTM_EXTRAS_DIR/ ]] || die could not find EXTRAS directory for DTM: $DTM_EXTRAS_DIR
+
+	  # Preference for what to drape over an image
+	  for EXTRAS_TYPE in cb sb br; do
+	    if [[ ! -r "$DTM_TEXTURE" ]]; then
+	      export DTM_TEXTURE=$(find "$DTM_EXTRAS_DIR" -name \*.${EXTRAS_TYPE}.jpg | tail -1)
+	    fi
+	  done
+
+	fi
+
+	DTM_TEXTURE_RL=$(readlink "$DTM_TEXTURE" || true)
+	[ -n "$DTM_TEXTURE_RL" ] && DTM_TEXTURE="$DTM_TEXTURE_RL"
+
+	# We need a texture if we are creating a .blend file
+	if [[ ! -r $DTM_TEXTURE ]]; then
+	  die could not find valid .jpg image to drape on DTM: $DTM_TEXTURE
+	fi
+
+	echo '    IMG:' $DTM_IMG
+	echo 'TEXTURE:' $DTM_TEXTURE
+	echo '  BLEND:' /tmp/${pm_target_match}.blend :: ${PBS_O_WORKDIR}/${pm_target_match}.blend
+	export DTM_IMG
+	export DTM_TEXTURE
+	export DTM_BLEND=/tmp/${pm_target_match}.blend
+	blender -b -P $AUTO_IMPORT_SCRIPT -noaudio
+	mv -f /tmp/${pm_target_match}.blend ${PBS_O_WORKDIR}/
+
+################################################################################
+## Render a .blend into a sequence of frames
+################################################################################
+%/frames/: %.blend
+	@queue blender
+	@Job_Name ${pm_target_match}-frames
+	@Mail_Points a
+	@Resource_List cput=48:00:00,walltime=5:00:00,mem=12g,ncpus=8,file=20gb
+	@Output_Path localhost:${PBS_O_WORKDIR}/
+	@Shell_Path_List /bin/bash
+	@Join_Path oe
+	cd $PBS_O_WORKDIR
+	set -o nounset
+	set -o errexit
+	WORKING_DIR=/tmp/$PBS_JOBID
+	BLEND=$WORKING_DIR/${pm_target_match}.blend
+	IMAGES="$WORKING_DIR/"
+	mkdir -p "$WORKING_DIR"
+	cd "$WORKING_DIR"
+	cp -f "$PBS_O_WORKDIR/"${pm_target_match}.blend $BLEND
+	time blender -t 8 -b "$BLEND" -F PNG --render-output "$IMAGES####.png" -x 1 -a
+	mkdir -p "$PBS_O_WORKDIR/$pm_target_match/frames/"
+	mv -f "$IMAGES"*.png "$PBS_O_WORKDIR/$pm_target_match/frames/"
+	cd /
+	rm -rf "$WORKING_DIR"
+
+################################################################################
+## Compile frames into various movie formats
+################################################################################
+%-1080.mp4: %/frames/
+	@queue blender
+	@Mail_Points a
+	@Resource_List cput=00:05:00,walltime=00:10:00,mem=1g,file=1g
+	@Output_Path localhost:${PBS_O_WORKDIR}/
+	@Shell_Path_List /bin/bash
+	@Join_Path oe
+	set -o nounset
+	set -o errexit
+	cd $PBS_O_WORKDIR
+	mkdir -p "$OUTPUT_DIR" 2> /dev/null
+	time ffmpeg -v 0 -r $ANIM_FRAMERATE -i "${pm_target_match}/frames/$IMAGE_FORMAT" -s hd1080 -b 8000k -y ${pm_target_name}
+
+%-720.mp4: %/frames/
+	@queue blender
+	@Mail_Points a
+	@Resource_List cput=00:05:00,walltime=00:10:00,mem=1g,file=1g
+	@Output_Path localhost:${PBS_O_WORKDIR}/
+	@Shell_Path_List /bin/bash
+	@Join_Path oe
+	set -o nounset
+	set -o errexit
+	cd $PBS_O_WORKDIR
+	mkdir -p "$OUTPUT_DIR" 2> /dev/null
+	time ffmpeg -v 0 -r $ANIM_FRAMERATE -i "${pm_target_match}/frames/$IMAGE_FORMAT" -s hd720 -b 4000k -y ${pm_target_name}
+
+%-480.mp4: %/frames/
+	@queue blender
+	@Mail_Points a
+	@Resource_List cput=00:05:00,walltime=00:10:00,mem=1g,file=1g
+	@Output_Path localhost:${PBS_O_WORKDIR}/
+	@Shell_Path_List /bin/bash
+	@Join_Path oe
+	set -o nounset
+	set -o errexit
+	cd $PBS_O_WORKDIR
+	mkdir -p "$OUTPUT_DIR" 2> /dev/null
+	time ffmpeg -v 0 -r $ANIM_FRAMERATE -i "${pm_target_match}/frames/$IMAGE_FORMAT" -s hd480 -b 1000k -y ${pm_target_name}
+
+################################################################################
+## Cleanup once other jobs are done...
+################################################################################
+orbits_%: %-480.mp4 %-720.mp4 %-1080.mp4
+	@queue blender
+	@Mail_Points a
+	@Resource_List cput=00:05:00,walltime=00:10:00,mem=128m,file=128m
+	@Output_Path localhost:${PBS_O_WORKDIR}/
+	@Shell_Path_List /bin/bash
+	@Join_Path oe
+	set -o nounset
+	set -o errexit
+	cd $PBS_O_WORKDIR
+	echo all dependencies rendered ... cleaning up
+	if [[ "$KEEP_FRAMES" == 'false' ]]; then
+	  rm -f ${pm_target_match}/frames/*.png
+	  rmdir ${pm_target_match}/frames 2> /dev/null || true
+	fi
+	[[ "$KEEP_BLEND" == "false" ]] && rm -f ${pm_target_match}.blend || true
+	touch ${pm_target_name}
+
