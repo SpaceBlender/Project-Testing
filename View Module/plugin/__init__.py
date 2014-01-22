@@ -15,6 +15,7 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ##### END GPL LICENSE BLOCK #####
+from scripts.io_mesh_img.plugin import import_img
 
 bl_info = {
     "name": "HiRISE DTM from PDS IMG",
@@ -50,8 +51,6 @@ if "bpy" in locals():
     import imp
     imp.reload(import_img)
 else:
-    from . import import_img
-
 
 import bpy
 from bpy.props import *
