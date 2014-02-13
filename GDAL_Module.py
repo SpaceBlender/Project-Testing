@@ -10,8 +10,7 @@
 import sys
 import subprocess
 
-
-class GdalDriver(object):
+class GDAL_Driver(object):
 
     input_dem = []
     color_text_file = []
