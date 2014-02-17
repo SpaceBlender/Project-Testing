@@ -1,6 +1,11 @@
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ImportHelper
+from . import blender_module
+from . import gdal_module
+from sys import platform as _platform
+import os
+
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
     bl_idname = "import_dem.img"
@@ -50,3 +55,45 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         input_DEM = self.filepath
         input_DEM = bpy.path.ensure_ext(input_DEM, '.IMG')
+        dtm_location = self.filepath
+        #texture_location = os.path.expanduser('~/DTM_TEXTURE.tiff')
+        texture_location = os.getcwd() + '/DTM_TEXTURE.tiff'
+        print('texture at'+texture_location)
+        ################################################################################
+        ## Use the GDAL tools to create hill-shade and color-relief and merge them with
+        ## hsv_merge.py to use as a texture for the DTM. Creates DTM_TEXTURE.tiff
+        ################################################################################
+        if self.color_pattern == 'NoColorPattern':
+            pass
+        else:
+            # If user selected a colr we are going to run the gdal and merge processes
+            # We need to dtermine which OS is being used and set the location of color files
+            # and the merge script accordingly
+            if _platform == "linux" or _platform == "linux2":
+            # linux
+                pass
+            elif _platform == "darwin":
+            # OS X
+                color_file = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/color_maps/'\
+                    + self.color_pattern + '.txt'
+                merge_location = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/hsv_merge.py'
+            elif _platform == "win32":
+            # Windows.
+                pass
+
+            gdal = gdal_module.GDALDriver(dtm_location, color_file)
+            gdal.gdal_hillshade()
+            gdal.gdal_color_relief()
+            gdal.hsv_merge(merge_location)
+            gdal.gdal_clean_up()
+        ################################################################################
+        return blender_module.load(self, context,
+                                   filepath=self.filepath,
+                                   scale=self.scale,
+                                   bin_mode=self.bin_mode,
+                                   color_pattern=self.color_pattern,
+                                   flyover_pattern=self.flyover_pattern,
+                                   texture_location=texture_location,
+                                   cropVars=False,
+                                   )
+        #return {'CANCELLED'}

@@ -14,17 +14,18 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ##### END GPL LICENSE BLOCK #####
+
 if "bpy" in locals():
     import imp
-    #imp.reload(GDAL_Module)
+    imp.reload(gdal_module)
     imp.reload(UI_Module)
-    #imp.reload(Blender_Module)
+    imp.reload(blender_module)
     #imp.reload(Flyover_Module)
 else:
-    #from . import Blender_Module
+    from . import blender_module
     #from . import Flyover_Module
     from . import UI_Module
-    #from . import GDAL_Module
+    from . import gdal_module
 
 import bpy
 
