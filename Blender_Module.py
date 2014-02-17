@@ -1424,9 +1424,8 @@ class DTMViewerRenderContext:
     def saveAs(self, path):
         bpy.ops.wm.save_as_mainfile(filepath=path, check_existing=False)
 
-
+# SpaceBlenders Code starts here
 def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pattern, texture_location, cropVars):
-    print('Cwd: %s' % os.getcwd())
     print("Bin Mode: %s" % bin_mode)
     print("Scale: %f" % scale)
     print("Color Mapping: %s" % color_pattern)
