@@ -69,13 +69,19 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         input_DEM = self.filepath
         input_DEM = bpy.path.ensure_ext(input_DEM, '.IMG')
         dtm_location = self.filepath
-        #texture_location = os.path.expanduser('~/DTM_TEXTURE.tiff')
+        texture_location = os.path.expanduser('~/DTM_TEXTURE.tiff')
         texture_location = os.getcwd() + '/DTM_TEXTURE.tiff'
-        print('texture at'+texture_location)
+
         ################################################################################
         ## Use the GDAL tools to create hill-shade and color-relief and merge them with
         ## hsv_merge.py to use as a texture for the DTM. Creates DTM_TEXTURE.tiff
         ################################################################################
+        # Strip out the image name to set texture location
+        texture_location = self.filepath.split('/')[-1:]
+        texture_location = texture_location[0].split('.')[:1]
+        texture_location = os.getcwd()+'/'+texture_location[0]+'.tiff'
+
+
         if self.color_pattern == 'NoColorPattern':
             pass
         else:
@@ -98,7 +104,8 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             gdal = gdal_module.GDALDriver(dtm_location, color_file)
             gdal.gdal_hillshade()
             gdal.gdal_color_relief()
-            gdal.hsv_merge(merge_location)
+            gdal.hsv_merge(merge_location, texture_location)
+            print('\nSaving texture at: ' + texture_location)
             gdal.gdal_clean_up()
         ################################################################################
         return blender_module.load(self, context,
