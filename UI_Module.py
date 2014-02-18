@@ -14,13 +14,26 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
     filter_glob = StringProperty(default="*.IMG", options={'HIDDEN'})
 
     #Color Control consider an option to say if you have GDAL installed or not -- possibly detect GDAL
+    # Colors to possibly add
+    #('BrownAndRedColorPattern', "Brown & Red (Mars)", "Not colorblind friendly")
+    #('GrayscaleColorPattern', "Grayscale (8-16 bit grays, Lunar)", "Colorblind friendly")
     color_pattern = EnumProperty( items=(
         ('NoColorPattern', "None", "Will skip GDAL execution"),
-        ('GrayscaleColorPattern', "Grayscale (8-16 bit grays, Lunar)", "Colorblind friendly"),
-        ('BlueAndWhiteColorPattern', "Blues & Whites (default)", "Colorblind friendly"),
-        ('BrownAndBlueColorPattern', "Brown & Blue (Earthlike)", "Colorblind friendly"),
-        ('BrownAndRedColorPattern', "Brown & Red (Mars)", "Not colorblind friendly"),
-        ('RainbowColorPattern', "Rainbow", "Extremely unfriendly to the colorblind")),
+        ('Rainbow_Saturated', 'Rainbow Saturated', 'Colorblind friendly'),
+        ('Rainbow_Medium', 'Rainbow Medium', 'Colorblind friendly'),
+        ('Rainbow_Light', 'Rainbow Light', 'Colorblind friendly'),
+        ('Blue_Steel', 'Blue Steel', 'Colorblind friendly'),
+        ('Earth', 'Earth', 'Colorblind friendly'),
+        ('Diverging_BrownBlue', 'Diverging Brown & Blue', 'Colorblind friendly'),
+        ('Diverging_RedGray', 'Diverging Red & Gray', 'Colorblind friendly'),
+        ('Diverging_BlueRed', 'Diverging Blue & Red', 'Colorblind friendly'),
+        ('Diverging_RedBlue', 'Diverging Red & Blue', 'Colorblind friendly'),
+        ('Diverging_GreenRed', 'Diverging Green & Red', 'Colorblind friendly'),
+        ('Sequential_Blue', 'Sequential Blue', 'Colorblind friendly'),
+        ('Sequential_Green', 'Sequential Green', 'Colorblind friendly'),
+        ('Sequential_Red', 'Sequential Red', 'Colorblind friendly'),
+        ('Sequential_BlueGreen', 'Sequential Blue & Green', 'Colorblind friendly'),
+        ('Sequential_YellowBrown', 'Sequential Yellow & Brown', 'Colorblind friendly')),
                                   name="Color", description="Import Color Texture", default='NoColorPattern')
 
     #Flyover Pattern Control
@@ -71,7 +84,8 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             # and the merge script accordingly
             if _platform == "linux" or _platform == "linux2":
             # linux
-                pass
+                color_file = '/usr/share/blender/scripts/addons/USGS/color_maps/' + self.color_pattern + '.txt'
+                merge_location = '/usr/share/blender/scripts/addons/USGS/hsv_merge.py'
             elif _platform == "darwin":
             # OS X
                 color_file = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/color_maps/'\

@@ -9,6 +9,7 @@
 import sys
 import subprocess
 
+import traceback
 
 class GDALDriver(object):
 
@@ -43,6 +44,7 @@ class GDALDriver(object):
                 print('gdaldem hillshade failed.'+'\n' + str(line))
                 sys.exit(1)
         except:
+            traceback.print_exc(file=sys.stdout)
             print('Failed to spawn subprocess for gdal hill-shade')
             sys.exit(1)
         print('\n'+'Hill-Shade created.')
@@ -69,6 +71,7 @@ class GDALDriver(object):
                 print('gdaldem color-relief failed.'+'\n' + str(line))
                 sys.exit(1)
         except:
+            traceback.print_exc(file=sys.stdout)
             print('Failed to spawn subprocess for gdal color-relief')
             sys.exit(1)
         print('\n'+'Color-Relief created.')
@@ -95,6 +98,7 @@ class GDALDriver(object):
             if sub_proc3.returncode:
                 raise Exception('\nhsv_merge failed - check console for errors.')
         except:
+            traceback.print_exc(file=sys.stdout)
             print('\nFailed to spawn subprocess for hsv_merge.')
             sys.exit(1)
 
@@ -104,5 +108,6 @@ class GDALDriver(object):
         try:
             subprocess.Popen(clean, close_fds=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except:
+            traceback.print_exc(file=sys.stdout)
             print('Failed to clean up GDAL temp images.')
             sys.exit(1)

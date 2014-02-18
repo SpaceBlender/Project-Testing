@@ -1433,7 +1433,7 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
     #Strip out the image name for saving later as .blend file
     save_path = filepath.split('/')[-1:]
     save_path = save_path[0].split('.')[:1]
-    save_path = os.getcwd()+save_path[0]+'.blend'
+    save_path = os.getcwd()+'/'+save_path[0]+'.blend'
     print('Processing image, saving at: ' + save_path)
 
     dtm_location = filepath
