@@ -76,9 +76,9 @@ class GDALDriver(object):
             sys.exit(1)
         print('\n'+'Color-Relief created.')
 
-    def hsv_merge(self, merge_location):
+    def hsv_merge(self, merge_location, texture_location):
     #   Merge the hillshade and color-relief using the hsv_merge script
-        merge = 'python ' + merge_location+' out_color.tiff out_hillshade.tiff DTM_TEXTURE.tiff'
+        merge = 'python ' + merge_location+' out_color.tiff out_hillshade.tiff ' + texture_location
         print('Running Command:', merge)
         print('This process takes a while. Please be patient...')
         try:
