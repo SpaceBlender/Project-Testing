@@ -1,4 +1,3 @@
-
 '''This class takes in a DEM image and a color mapping file in the form
    GdalModule(<input_dem> <color_text_file>)
    The script runs the gdaldem hillshade on the image, then runs gdaldem color_relief_map
