@@ -17,6 +17,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
     # Colors to possibly add
     #('BrownAndRedColorPattern', "Brown & Red (Mars)", "Not colorblind friendly")
     #('GrayscaleColorPattern', "Grayscale (8-16 bit grays, Lunar)", "Colorblind friendly")
+    #Haven't determined color blindness support
     color_pattern = EnumProperty( items=(
         ('NoColorPattern', "None", "Will skip GDAL execution"),
         ('Rainbow_Saturated', 'Rainbow Saturated', 'Colorblind friendly'),
@@ -27,6 +28,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ('Diverging_BrownBlue', 'Diverging Brown & Blue', 'Colorblind friendly'),
         ('Diverging_RedGray', 'Diverging Red & Gray', 'Colorblind friendly'),
         ('Diverging_BlueRed', 'Diverging Blue & Red', 'Colorblind friendly'),
+        ('Diverging_RedBrown', 'Diverging Brown & Red (Mars)', 'Colorblind friendly'),
         ('Diverging_RedBlue', 'Diverging Red & Blue', 'Colorblind friendly'),
         ('Diverging_GreenRed', 'Diverging Green & Red', 'Colorblind friendly'),
         ('Sequential_Blue', 'Sequential Blue', 'Colorblind friendly'),
@@ -34,7 +36,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ('Sequential_Red', 'Sequential Red', 'Colorblind friendly'),
         ('Sequential_BlueGreen', 'Sequential Blue & Green', 'Colorblind friendly'),
         ('Sequential_YellowBrown', 'Sequential Yellow & Brown', 'Colorblind friendly')),
-                                  name="Color", description="Import Color Texture", default='NoColorPattern')
+        name="Color", description="Import Color Texture", default='NoColorPattern')
 
     #Flyover Pattern Control
     flyover_pattern = EnumProperty(items=(
@@ -63,23 +65,21 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ('BIN6-FAST', "6x6 Fast", "use one sample per 6x6 region"),
         ('BIN12', "12x12", "use 12x12 binning to import the mesh"),
         ('BIN12-FAST', "12x12 Fast", "use one sample per 12x12 region")),
-                            name="Binning", description="Import Binning", default='BIN12-FAST')
+        name="Binning", description="Import Binning", default='BIN12-FAST')
 
     def execute(self, context):
         input_DEM = self.filepath
         input_DEM = bpy.path.ensure_ext(input_DEM, '.IMG')
         dtm_location = self.filepath
-        texture_location = os.path.expanduser('~/DTM_TEXTURE.tiff')
-        texture_location = os.getcwd() + '/DTM_TEXTURE.tiff'
 
         ################################################################################
         ## Use the GDAL tools to create hill-shade and color-relief and merge them with
         ## hsv_merge.py to use as a texture for the DTM. Creates DTM_TEXTURE.tiff
         ################################################################################
-        # Strip out the image name to set texture location
+        # Strip out the image name to set texture location and append color choice.
         texture_location = self.filepath.split('/')[-1:]
         texture_location = texture_location[0].split('.')[:1]
-        texture_location = os.getcwd()+'/'+texture_location[0]+'.tiff'
+        texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
 
 
         if self.color_pattern == 'NoColorPattern':
@@ -105,6 +105,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             gdal.gdal_hillshade()
             gdal.gdal_color_relief()
             gdal.hsv_merge(merge_location, texture_location)
+            #gdal.hsv_merge(merge_location, 'DTM_TEXTURE.tiff')
             print('\nSaving texture at: ' + texture_location)
             gdal.gdal_clean_up()
         ################################################################################

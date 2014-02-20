@@ -5,10 +5,10 @@
    is called to merge the hillshade and color_relief together. This script produces 3 output
    images out_hillshade.tiff, out_color.tiff, and DTM_TEXTURE.tiff'''
 
+
 import sys
 import subprocess
 
-import traceback
 
 class GDALDriver(object):
 
@@ -42,9 +42,9 @@ class GDALDriver(object):
             for line in sub_proc1.stderr:
                 print('gdaldem hillshade failed.'+'\n' + str(line))
                 sys.exit(1)
-        except:
-            traceback.print_exc(file=sys.stdout)
-            print('Failed to spawn subprocess for gdal hill-shade')
+        except subprocess.SubprocessError as e:
+            print('Error: ' + e)
+            print('\nFailed to spawn subprocess for gdal hill-shade')
             sys.exit(1)
         print('\n'+'Hill-Shade created.')
 
@@ -69,9 +69,9 @@ class GDALDriver(object):
             for line in sub_proc2.stderr:
                 print('gdaldem color-relief failed.'+'\n' + str(line))
                 sys.exit(1)
-        except:
-            traceback.print_exc(file=sys.stdout)
-            print('Failed to spawn subprocess for gdal color-relief')
+        except subprocess.SubprocessError as e:
+            print('Error: ' + e)
+            print('\nFailed to spawn subprocess for gdal color-relief')
             sys.exit(1)
         print('\n'+'Color-Relief created.')
 
@@ -96,8 +96,8 @@ class GDALDriver(object):
 
             if sub_proc3.returncode:
                 raise Exception('\nhsv_merge failed - check console for errors.')
-        except:
-            traceback.print_exc(file=sys.stdout)
+        except subprocess.SubprocessError as e:
+            print('Error' + e)
             print('\nFailed to spawn subprocess for hsv_merge.')
             sys.exit(1)
 
@@ -106,7 +106,19 @@ class GDALDriver(object):
         print('\nCleaning up Gdal temp images...')
         try:
             subprocess.Popen(clean, close_fds=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except:
-            traceback.print_exc(file=sys.stdout)
-            print('Failed to clean up GDAL temp images.')
+        except OSError as e:
+            print('Error: ' + e)
+            print('\nFailed to clean up GDAL temp images.')
             sys.exit(1)
+
+###################################################################################################################
+
+# Test Area Caution!!
+
+###################################################################################################################
+# gdal = GDALDriver('/Users/jasonhedlund/Desktop/DEMs/DTEEC_009842_1755_009130_1755_A01.IMG', '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/color_maps/Diverging_BlueRed.txt')
+# gdal.gdal_hillshade()
+# gdal.gdal_color_relief()
+# gdal.hsv_merge('/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/hsv_merge.py', '/Users/jasonhedlund/Desktop/processed_DEMs/DTEEC_009842_1755_009130_1755_A01.tiff')
+# #print('\nSaving texture at: ' + texture_location)
+# gdal.gdal_clean_up()
