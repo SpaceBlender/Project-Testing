@@ -99,6 +99,10 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
                 merge_location = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/hsv_merge.py'
             elif _platform == "win32":
             # Windows.
+                color_file = os.path.join("C:", "Program Files", "Blender Foundation", "Blender", "2.68", "scripts", "addons", 
+                "USGS-master", "color_maps.txt")
+                merger_location = os.path.join("C:", "Program Files", "Blender Foundation", "Blender", "2.68", "scripts",
+                "addons", "USGS-master", "hsv_merge.py")
                 pass
 
             gdal = gdal_module.GDALDriver(dtm_location, color_file)
