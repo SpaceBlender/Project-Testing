@@ -42,11 +42,6 @@ class GDALDriver(object):
                     sys.stdout.write(outstr)
                     sys.stdout.flush()
 
-            #Check if GDAL returns an error message, then we print GDAL's error message and exit the program
-           #TODO Windows Doesn't Like
-            # for line in sub_proc1.stderr:
-            #     print('gdaldem hillshade failed.'+'\n' + str(line))
-            #     sys.exit(1)
         except subprocess.SubprocessError as e:
             print('Error: ' + e)
             print('\nFailed to spawn subprocess for gdal hill-shade')
@@ -73,11 +68,7 @@ class GDALDriver(object):
                             outstr = outstr.replace(char, '')
                     sys.stdout.write(outstr)
                     sys.stdout.flush()
-        #TODO Windows Doesn't Like
-        #   Check if GDAL returns an error message, then we print GDAL's error message and exit the program.
-        #     for line in sub_proc2.stderr:
-        #         print('gdaldem color-relief failed.'+'\n' + str(line))
-        #         sys.exit(1)
+
         except subprocess.SubprocessError as e:
             print('Error: ' + e)
             print('\nFailed to spawn subprocess for gdal color-relief')
@@ -106,8 +97,7 @@ class GDALDriver(object):
                     sys.stdout.write(outstr)
                     sys.stdout.flush()
 
-            # if sub_proc3.returncode:
-            #     raise Exception('\nhsv_merge failed - check console for errors.')
+
         except subprocess.SubprocessError as e:
             print('Error' + e)
             print('\nFailed to spawn subprocess for hsv_merge.')
@@ -122,15 +112,3 @@ class GDALDriver(object):
             print('Error: ' + e)
             print('\nFailed to clean up GDAL temp images.')
             sys.exit(1)
-
-###################################################################################################################
-
-# Test Area Caution!!
-
-###################################################################################################################
-# gdal = GDALDriver('/Users/jasonhedlund/Desktop/DEMs/DTEEC_009842_1755_009130_1755_A01.IMG', '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/color_maps/Diverging_BlueRed.txt')
-# gdal.gdal_hillshade()
-# gdal.gdal_color_relief()
-# gdal.hsv_merge('/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/hsv_merge.py', '/Users/jasonhedlund/Desktop/processed_DEMs/DTEEC_009842_1755_009130_1755_A01.tiff')
-# #print('\nSaving texture at: ' + texture_location)
-# gdal.gdal_clean_up()
