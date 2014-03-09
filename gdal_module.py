@@ -104,11 +104,21 @@ class GDALDriver(object):
             sys.exit(1)
 
     def gdal_clean_up(self):
-        clean = 'rm out_hillshade.tiff out_color.tiff'
-        print('\nCleaning up Gdal temp images...')
-        try:
-            subprocess.Popen(clean, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except OSError as e:
-            print('Error: ' + e)
-            print('\nFailed to clean up GDAL temp images.')
-            sys.exit(1)
+        if _platform == "win32":
+            clean = 'del out_hillshade.tiff out_color.tiff'
+            try:
+                subprocess.Popen(clean, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except OSError as e:
+                print('Error: ' + e)
+                print('\nFailed to clean up GDAL temp images.')
+                sys.exit(1)
+
+        else:
+            clean = 'rm out_hillshade.tiff out_color.tiff'
+            print('\nCleaning up Gdal temp images...')
+            try:
+                subprocess.Popen(clean, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except OSError as e:
+                print('Error: ' + e)
+                print('\nFailed to clean up GDAL temp images.')
+                sys.exit(1)
