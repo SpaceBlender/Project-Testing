@@ -106,6 +106,7 @@ class GDALDriver(object):
     def gdal_clean_up(self):
         if _platform == "win32":
             clean = 'del out_hillshade.tiff out_color.tiff'
+            print('\nCleaning up Gdal temp images...')
             try:
                 subprocess.Popen(clean, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except OSError as e:
