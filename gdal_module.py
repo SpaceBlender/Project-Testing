@@ -106,7 +106,6 @@ class GDALDriver(object):
             print('\nCleaning up Gdal temp images...')
             try:
                 subprocess.Popen(clean, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                subprocess.Popen(clean2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except OSError as e:
                 print('Error: ' + e)
                 print('\nFailed to clean up GDAL temp images.')
