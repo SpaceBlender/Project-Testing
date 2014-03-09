@@ -31,7 +31,7 @@ import bpy
 
 bl_info = {
     "name": "Import DEM from IMG",
-    "author": "Andrew Carter, Eric Ghazal, Jason Hedlund, Terrence",
+    "author": "Andrew Carter, Eric Ghazal, Jason Hedlund, Terence Luther",
     "version": (0, 1, 0),
     "blender": (2, 63, 0),
     "warning": "Requires GDAL to be installed.",
