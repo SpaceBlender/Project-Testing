@@ -76,11 +76,6 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ## Use the GDAL tools to create hill-shade and color-relief and merge them with
         ## hsv_merge.py to use as a texture for the DTM. Creates DTM_TEXTURE.tiff
         ################################################################################
-        # # Strip out the image name to set texture location and append color choice.
-        # texture_location = self.filepath.split('/')[-1:]
-        # texture_location = texture_location[0].split('.')[:1]
-        # texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
-
 
         if self.color_pattern == 'NoColorPattern':
             pass
