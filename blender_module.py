@@ -18,7 +18,7 @@
 
 
 from struct import pack, unpack, unpack_from
-# from . import gdal_module
+from sys import platform as _platform
 import queue, threading
 
 import bpy
@@ -1309,12 +1309,12 @@ class DTMViewerRenderContext:
 
         # Right camera output to the default destination input
         # R_Src_output becomes the output of the fg/bg composite stream
-        R_Src_output = fg_bg_composite(
-            Tree,
-            R_Src_output,
-            Default_Dst.inputs['Image'],
-            fgImgPath,
-            bgImgPath)
+        # R_Src_output = fg_bg_composite(
+        #     Tree,
+        #     R_Src_output,
+        #     Default_Dst.inputs['Image'],
+        #     fgImgPath,
+        #     bgImgPath)
 
         # Add a similar source for the left channel
         L_Src = Tree.nodes.new('R_LAYERS')
@@ -1323,12 +1323,12 @@ class DTMViewerRenderContext:
         L_Src_output = L_Src.outputs['Image']
 
         # Add a similar fg/bg composite path for the left channel
-        L_Src_output = fg_bg_composite(
-            Tree,
-            L_Src_output,
-            None,
-            fgImgPath,
-            bgImgPath)
+        # L_Src_output = fg_bg_composite(
+        #     Tree,
+        #     L_Src_output,
+        #     None,
+        #     fgImgPath,
+        #     bgImgPath)
 
         # Add a top/bottom composite file output
         tb_file_output_node = Tree.nodes.new('OUTPUT_FILE')
@@ -1431,10 +1431,16 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
     print("Color Mapping: %s" % color_pattern)
     print("Flyover Mode: %s" % flyover_pattern)
     #Strip out the image name for saving later as .blend file
-    save_path = filepath.split('/')[-1:]
-    save_path = save_path[0].split('.')[:1]
-    save_path = os.getcwd()+'/'+save_path[0]+'.blend'
-    print('Processing image, saving at: ' + save_path)
+    if _platform == "win32":
+        save_path = filepath.split('\\')[-1:]
+        save_path = save_path[0].split('.')[:1]
+        save_path = os.getcwd()+'\\'+save_path[0]+'.blend'
+        print('Processing image, saving at: ' + save_path)
+    else:
+        save_path = filepath.split('/')[-1:]
+        save_path = save_path[0].split('.')[:1]
+        save_path = os.getcwd()+'/'+save_path[0]+'.blend'
+        print('Processing image, saving at: ' + save_path)
 
     dtm_location = filepath
 

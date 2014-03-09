@@ -76,10 +76,10 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ## Use the GDAL tools to create hill-shade and color-relief and merge them with
         ## hsv_merge.py to use as a texture for the DTM. Creates DTM_TEXTURE.tiff
         ################################################################################
-        # Strip out the image name to set texture location and append color choice.
-        texture_location = self.filepath.split('/')[-1:]
-        texture_location = texture_location[0].split('.')[:1]
-        texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
+        # # Strip out the image name to set texture location and append color choice.
+        # texture_location = self.filepath.split('/')[-1:]
+        # texture_location = texture_location[0].split('.')[:1]
+        # texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
 
 
         if self.color_pattern == 'NoColorPattern':
@@ -90,16 +90,32 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             # and the merge script accordingly
             if _platform == "linux" or _platform == "linux2":
             # linux
+                    # Strip out the image name to set texture location and append color choice.
+                texture_location = self.filepath.split('/')[-1:]
+                texture_location = texture_location[0].split('.')[:1]
+                texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
                 color_file = '/usr/share/blender/scripts/addons/USGS/color_maps/' + self.color_pattern + '.txt'
                 merge_location = '/usr/share/blender/scripts/addons/USGS/hsv_merge.py'
             elif _platform == "darwin":
             # OS X
+                        # Strip out the image name to set texture location and append color choice.
+                texture_location = self.filepath.split('/')[-1:]
+                texture_location = texture_location[0].split('.')[:1]
+                texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
                 color_file = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/color_maps/'\
                     + self.color_pattern + '.txt'
                 merge_location = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/hsv_merge.py'
             elif _platform == "win32":
             # Windows.
-                pass
+                # Strip out the image name to set texture location and append color choice.
+                texture_location = self.filepath.split('\\')[-1:]
+                texture_location = texture_location[0].split('.')[:1]
+                texture_location = os.getcwd()+'\\'+texture_location[0]+'_'+self.color_pattern+'.tiff'
+                color_file = '"'+'C:'+'\\'+'Program Files'+'\\'+'Blender Foundation'+'\\'+'Blender'+'\\'+'2.69'+'\\'+'' \
+                    'scripts'+'\\'+'addons'+'\\'+'USGS'+'\\'+'color_maps'+'\\' + self.color_pattern + '.txt'+'"'
+                merge_location = '"'+'C:'+'\\'+'Program Files'+'\\'+'Blender Foundation'+'\\'+'Blender'+'\\'+'' \
+                    '2.69\scripts'+'\\'+'addons'+'\\'+'USGS'+'\\'+'hsv_merge.py'+'"'
+
 
             gdal = gdal_module.GDALDriver(dtm_location, color_file)
             gdal.gdal_hillshade()
