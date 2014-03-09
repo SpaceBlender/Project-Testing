@@ -6,27 +6,24 @@
    images out_hillshade.tiff, out_color.tiff, and DTM_TEXTURE.tiff'''
 
 
-import sys
 import subprocess
-from sys import platform as _platform
-
+import platform as _platform
+import sys
 
 class GDALDriver(object):
 
     input_dem = []
-    color_text_file = []
 
-    def __init__(self, input_dem, color_text_file):
+    def __init__(self, input_dem):
         self.input_dem = input_dem
-        self.color_text_file = color_text_file
 
-    def gdal_hillshade(self):
+    def gdal_hillshade(self, hill_shade):
 
     #  Run gdaldem hillshade on the input dem image
-        if _platform == "win32":
-            hill_sh = 'OSGeo4W gdaldem hillshade '+self.input_dem+ ' out_hillshade.tiff'
+        if _platform.system() == "Windows":
+            hill_sh = 'OSGeo4W gdaldem hillshade '+self.input_dem+' '+hill_shade
         else:
-            hill_sh = 'gdaldem hillshade '+self.input_dem+ ' out_hillshade.tiff'
+            hill_sh = 'gdaldem hillshade '+self.input_dem+' '+hill_shade
         print('Running Command: ', hill_sh)
         try:
             sub_proc1 = subprocess.Popen(hill_sh, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -48,12 +45,12 @@ class GDALDriver(object):
             sys.exit(1)
         print('\n'+'Hill-Shade created.')
 
-    def gdal_color_relief(self):
+    def gdal_color_relief(self, color_file, color_relief):
     #   Run gdal color_relief on the input dem image using the color_txt_file supplied
-        if _platform == "win32":
-            col_rel = 'OSGeo4W gdaldem color-relief '+self.input_dem+' '+self.color_text_file+' '+'out_color.tiff'
+        if _platform.system() == "Windows":
+            col_rel = 'OSGeo4W gdaldem color-relief '+self.input_dem+' '+color_file+' '+color_relief
         else:
-            col_rel = 'gdaldem color-relief '+self.input_dem+' '+self.color_text_file+' '+'out_color.tiff'
+            col_rel = 'gdaldem color-relief '+self.input_dem+' '+color_file+' '+color_relief
         print('Running Command:', col_rel)
         try:
             sub_proc2 = subprocess.Popen(col_rel, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -75,12 +72,12 @@ class GDALDriver(object):
             sys.exit(1)
         print('\n'+'Color-Relief created.')
 
-    def hsv_merge(self, merge_location, texture_location):
+    def hsv_merge(self, merge_location, hill_shade, color_relief, texture_location):
     #   Merge the hillshade and color-relief using the hsv_merge script
-        if _platform == "win32":
-            merge = 'OSGeo4W python ' + merge_location+' out_color.tiff out_hillshade.tiff ' + texture_location
+        if _platform.system() == "Windows":
+            merge = 'OSGeo4W python ' + merge_location+' '+color_relief+' '+hill_shade+' '+texture_location
         else:
-            merge = 'python ' + merge_location+' out_color.tiff out_hillshade.tiff ' + texture_location
+            merge = 'python ' + merge_location+' '+color_relief+' '+hill_shade+' '+texture_location
         print('Running Command:', merge)
         print('This process takes a while. Please be patient...')
         try:
@@ -103,19 +100,20 @@ class GDALDriver(object):
             print('\nFailed to spawn subprocess for hsv_merge.')
             sys.exit(1)
 
-    def gdal_clean_up(self):
-        if _platform == "win32":
-            clean = 'del out_hillshade.tiff out_color.tiff'
+    def gdal_clean_up(self, hill_shade, color_relief):
+        if _platform.system() == "Windows":
+            clean = 'del '+hill_shade+' '+color_relief
             print('\nCleaning up Gdal temp images...')
             try:
                 subprocess.Popen(clean, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.Popen(clean2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except OSError as e:
                 print('Error: ' + e)
                 print('\nFailed to clean up GDAL temp images.')
                 sys.exit(1)
 
         else:
-            clean = 'rm out_hillshade.tiff out_color.tiff'
+            clean = 'rm '+hill_shade+' '+color_relief
             print('\nCleaning up Gdal temp images...')
             try:
                 subprocess.Popen(clean, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
