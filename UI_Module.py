@@ -3,7 +3,7 @@ from bpy.props import *
 from bpy_extras.io_utils import ImportHelper
 from . import blender_module
 from . import gdal_module
-import platform as _platform
+from sys import platform as _platform
 import os
 
 
@@ -71,7 +71,6 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         input_DEM = self.filepath
         input_DEM = bpy.path.ensure_ext(input_DEM, '.IMG')
         dtm_location = self.filepath
-        project_location = os.path.dirname(__file__)
 
         ################################################################################
         ## Use the GDAL tools to create hill-shade and color-relief and merge them with
@@ -92,8 +91,6 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
                 texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
                 color_file = '/usr/share/blender/scripts/addons/USGS/color_maps/' + self.color_pattern + '.txt'
                 merge_location = '/usr/share/blender/scripts/addons/USGS/hsv_merge.py'
-                hill_shade = os.path.normpath("\""+project_location+"/maps/hillshade.tiff\"")
-                color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
             elif _platform == "darwin":
             # OS X
                         # Strip out the image name to set texture location and append color choice.
@@ -103,24 +100,25 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
                 color_file = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/color_maps/'\
                     + self.color_pattern + '.txt'
                 merge_location = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/hsv_merge.py'
-                hill_shade = os.path.normpath("\""+project_location+"/maps/hillshade.tiff\"")
-                color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
-            elif _platform.system() == "Windows":
+            elif _platform == "win32":
             # Windows.
-            #consider using this for all systems should be cross compatible... but I can't test it outside of windows yet
-                color_file = os.path.normpath("\"" + project_location + "/color_maps/" + self.color_pattern + ".txt\"")
-                merge_location = os.path.normpath("\"" + project_location + "/hsv_merge.py\"")
-                texture_location = os.path.normpath(dtm_location + ".tiff")
-                hill_shade = os.path.normpath("\""+project_location+"/maps/hillshade.tiff\"")
-                color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
+                # Strip out the image name to set texture location and append color choice.
+                texture_location = self.filepath.split('\\')[-1:]
+                texture_location = texture_location[0].split('.')[:1]
+                texture_location = os.getcwd()+'\\'+texture_location[0]+'_'+self.color_pattern+'.tiff'
+                color_file = '"'+'C:'+'\\'+'Program Files'+'\\'+'Blender Foundation'+'\\'+'Blender'+'\\'+'2.69'+'\\'+'' \
+                    'scripts'+'\\'+'addons'+'\\'+'USGS'+'\\'+'color_maps'+'\\' + self.color_pattern + '.txt'+'"'
+                merge_location = '"'+'C:'+'\\'+'Program Files'+'\\'+'Blender Foundation'+'\\'+'Blender'+'\\'+'' \
+                    '2.69\scripts'+'\\'+'addons'+'\\'+'USGS'+'\\'+'hsv_merge.py'+'"'
 
-            gdal = gdal_module.GDALDriver(dtm_location)
-            gdal.gdal_hillshade(hill_shade)
-            gdal.gdal_color_relief(color_file, color_relief)
-            gdal.hsv_merge(merge_location, hill_shade, color_relief, texture_location)
+
+            gdal = gdal_module.GDALDriver(dtm_location, color_file)
+            gdal.gdal_hillshade()
+            gdal.gdal_color_relief()
+            gdal.hsv_merge(merge_location, texture_location)
             #gdal.hsv_merge(merge_location, 'DTM_TEXTURE.tiff')
             print('\nSaving texture at: ' + texture_location)
-            gdal.gdal_clean_up(hill_shade, color_relief)
+            gdal.gdal_clean_up()
         ################################################################################
         return blender_module.load(self, context,
                                    filepath=self.filepath,
