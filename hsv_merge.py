@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #******************************************************************************
 #  $Id$
 # 
@@ -201,7 +200,7 @@ for i in range(hillband.YSize):
 
     #convert to HSV
     hsv = rgb_to_hsv( rScanline, gScanline, bScanline )
-    
+
     # if there's nodata on the hillband, use the v value from the color
     # dataset instead of the hillshade value.
     if hillbandnodatavalue is not None:
@@ -212,7 +211,7 @@ for i in range(hillband.YSize):
 
     #replace v with hillshade
     hsv_adjusted = numpy.asarray( [hsv[0], hsv[1], v] )
-    
+
     #convert back to RGB
     dst_color = hsv_to_rgb( hsv_adjusted )
 
@@ -227,7 +226,10 @@ for i in range(hillband.YSize):
         aScanline = aBand.ReadAsArray(0, i, hillband.XSize, 1, hillband.XSize, 1)
         outband = outdataset.GetRasterBand(4)
         outband.WriteArray(aScanline, 0, i)
-    
+
     #update progress line
     if not quiet:
         gdal.TermProgress_nocb( (float(i+1) / hillband.YSize) )
+
+#formal exit
+sys.exit(0)

@@ -11,14 +11,10 @@ import platform as _platform
 import sys
 
 class GDALDriver(object):
-
-    input_dem = []
-
     def __init__(self, input_dem):
         self.input_dem = input_dem
 
     def gdal_hillshade(self, hill_shade):
-
     #  Run gdaldem hillshade on the input dem image
         if _platform.system() == "Windows":
             hill_sh = 'OSGeo4W gdaldem hillshade '+self.input_dem+' '+hill_shade
@@ -44,6 +40,7 @@ class GDALDriver(object):
             print('\nFailed to spawn subprocess for gdal hill-shade')
             sys.exit(1)
         print('\n'+'Hill-Shade created.')
+        sub_proc1.terminate()
 
     def gdal_color_relief(self, color_file, color_relief):
     #   Run gdal color_relief on the input dem image using the color_txt_file supplied
@@ -71,6 +68,7 @@ class GDALDriver(object):
             print('\nFailed to spawn subprocess for gdal color-relief')
             sys.exit(1)
         print('\n'+'Color-Relief created.')
+        sub_proc2.terminate()
 
     def hsv_merge(self, merge_location, hill_shade, color_relief, texture_location):
     #   Merge the hillshade and color-relief using the hsv_merge script
@@ -93,12 +91,11 @@ class GDALDriver(object):
                             outstr = outstr.replace(char, '')
                     sys.stdout.write(outstr)
                     sys.stdout.flush()
-
-
         except subprocess.SubprocessError as e:
             print('Error' + e)
             print('\nFailed to spawn subprocess for hsv_merge.')
             sys.exit(1)
+        sub_proc3.terminate()
 
     def gdal_clean_up(self, hill_shade, color_relief):
         if _platform.system() == "Windows":
@@ -110,7 +107,6 @@ class GDALDriver(object):
                 print('Error: ' + e)
                 print('\nFailed to clean up GDAL temp images.')
                 sys.exit(1)
-
         else:
             clean = 'rm '+hill_shade+' '+color_relief
             print('\nCleaning up Gdal temp images...')

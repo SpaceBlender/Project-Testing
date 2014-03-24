@@ -3,9 +3,9 @@ from bpy.props import *
 from bpy_extras.io_utils import ImportHelper
 from . import blender_module
 from . import gdal_module
+from . import flyover_module
 import platform as _platform
 import os
-
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
     bl_idname = "import_dem.img"
@@ -69,49 +69,19 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         input_DEM = self.filepath
-        input_DEM = bpy.path.ensure_ext(input_DEM, '.IMG')
+        if input_DEM != bpy.path.ensure_ext(input_DEM, ".IMG"):
+            return {'CANCELLED'}
         dtm_location = self.filepath
-        project_location = os.path.dirname(__file__)
-        hill_shade = ''
-        color_relief = ''
-        color_file = ''
-        print("Here it is: ",project_location)
 
+        project_location = os.path.dirname(__file__)
         ################################################################################
         ## Use the GDAL tools to create hill-shade and color-relief and merge them with
         ## hsv_merge.py to use as a texture for the DTM. Creates DTM_TEXTURE.tiff
         ################################################################################
-
         if self.color_pattern == 'NoColorPattern':
+            texture_location=None
             pass
         else:
-            # # If user selected a colr we are going to run the gdal and merge processes
-            # # We need to dtermine which OS is being used and set the location of color files
-            # # and the merge script accordingly
-            # if _platform == "linux" or _platform == "linux2":
-            # # linux
-            #         # Strip out the image name to set texture location and append color choice.
-            #     texture_location = self.filepath.split('/')[-1:]
-            #     texture_location = texture_location[0].split('.')[:1]
-            #     texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
-            #     color_file = '/usr/share/blender/scripts/addons/USGS/color_maps/' + self.color_pattern + '.txt'
-            #     merge_location = '/usr/share/blender/scripts/addons/USGS/hsv_merge.py'
-            #     hill_shade = os.path.normpath("\""+project_location+"/maps/hillshade.tiff\"")
-            #     color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
-            # elif _platform.system() == "darwin":
-            # # OS X
-            #             # Strip out the image name to set texture location and append color choice.
-            #     texture_location = self.filepath.split('/')[-1:]
-            #     texture_location = texture_location[0].split('.')[:1]
-            #     texture_location = os.getcwd()+'/'+texture_location[0]+'_'+self.color_pattern+'.tiff'
-            #     color_file = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/color_maps/'\
-            #         + self.color_pattern + '.txt'
-            #     merge_location = '/Applications/Blender/blender.app/Contents/MacOS/2.69/scripts/addons/USGS/hsv_merge.py'
-            #     hill_shade = os.path.normpath("\""+project_location+"/maps/hillshade.tiff\"")
-            #     color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
-            # elif _platform.system() == "Windows":
-            # Windows.
-            #consider using this for all systems should be cross compatible... but I can't test it outside of windows yet
             color_file = os.path.normpath("\"" + project_location + "/color_maps/" + self.color_pattern + ".txt\"")
             merge_location = os.path.normpath("\"" + project_location + "/hsv_merge.py\"")
             texture_location = os.path.normpath(dtm_location + ".tiff")
@@ -119,20 +89,35 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
 
             gdal = gdal_module.GDALDriver(dtm_location)
+            gdal.gdal_clean_up(hill_shade, color_relief)
             gdal.gdal_hillshade(hill_shade)
             gdal.gdal_color_relief(color_file, color_relief)
             gdal.hsv_merge(merge_location, hill_shade, color_relief, texture_location)
-            #gdal.hsv_merge(merge_location, 'DTM_TEXTURE.tiff')
+
             print('\nSaving texture at: ' + texture_location)
             gdal.gdal_clean_up(hill_shade, color_relief)
+
         ################################################################################
-        return blender_module.load(self, context,
+        ####################Execute DEM Importer and Blender Module#####################
+        blender_module.load(self, context,
                                    filepath=self.filepath,
                                    scale=self.scale,
                                    bin_mode=self.bin_mode,
                                    color_pattern=self.color_pattern,
                                    flyover_pattern=self.flyover_pattern,
                                    texture_location=texture_location,
-                                   cropVars=False,
+                                   cropVars=False
                                    )
-        #return {'CANCELLED'}
+        ################################################################################
+        ###############################Execute Flyovers#######################################
+        if self.flyover_pattern == "NoFlyover":
+            print("Skipping flyover")
+            pass
+        elif self.flyover_pattern == "CirclePattern":
+            print("Entering circular pattern")
+            flyover = flyover_module.flyover_driver()
+            flyover.circleFlyoverPattern()
+
+        #todo add extra flyovers
+
+        return {'FINISHED'}

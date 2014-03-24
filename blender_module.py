@@ -20,7 +20,6 @@
 from struct import pack, unpack, unpack_from
 from sys import platform as _platform
 import queue, threading
-
 import bpy
 from bpy.ops import *
 import os
@@ -731,24 +730,19 @@ class DTMViewerRenderContext:
     #   1 Lamp (Sun)
     #   1 Camera
     #   1 Empty (CameraTarget)
-
-    def __init__(self, dtm_img, dtm_texture=None, framesPerOrbit=72):
+    def __init__(self, dtm_img, dtm_texture=None):
         self.__img = dtm_img
         self.__texture = dtm_texture
-        self.__framesPerOrbit = framesPerOrbit
-        self.__orbitsPerDTM = 1
 
     def createDefaultContext(self):
         ''' clears the current scene and fills it with a DTM '''
         self.clearScene()
         self.addEmptyTarget()
-        self.addCirclePath()
-        self.setupCamera()
         self.setupRender()
         self.setupLightSource()
         self.addDTM()
+        self.setupDefaultCamera()
         self.cleanupView()
-        self.adjustCameraTarget()
 
     # Adds the Empty target for the camera to track
     def addEmptyTarget(self):
@@ -759,21 +753,6 @@ class DTMViewerRenderContext:
         mt.name = 'CameraTarget'
         self.__CameraTarget = mt
 
-    # Adds the path for the camera to follow
-    def addCirclePath(self):
-        # Add a circular path
-        bpy.ops.curve.primitive_bezier_circle_add()
-        bpy.ops.object.parent_set(type='FOLLOW')
-
-        for o in filter(lambda o: o.type == 'CURVE', bpy.data.objects):
-            crv = o
-        for o in bpy.data.curves:
-            o.path_duration = self.__framesPerOrbit * self.__orbitsPerDTM
-        crv.name = 'CirclePath'
-        for o in crv.children:
-            o.path_duration = self.__framesPerOrbit * self.__orbitsPerDTM
-        self.__CameraPath = crv
-
     # Clear the scene by removing all objects/materials
     def clearScene(self):
         bpy.ops.object.select_all(action='SELECT')
@@ -782,23 +761,27 @@ class DTMViewerRenderContext:
             bpy.data.materials.remove(mat)
 
     # Setup a camera to track our empty target
-    def setupCamera(self, Z=0.0):
+    def setupDefaultCamera(self, Z=130.0):
+        x_pos = (self.__dtm_max_v[0] - self.__dtm_min_v[0])+50
+        y_pos = (self.__dtm_max_v[1] - self.__dtm_min_v[1])
+        z_pos = ( self.__dtm_max_v[2]+Z)
+
         # Create a new default camera
         bpy.ops.object.camera_add()
         for camera in filter(lambda o: o.type == 'CAMERA', bpy.data.objects):
             pass
 
-        # Set the camera above the origin
-        camera.location[2] = 0.0 + Z
+        #Set cmera location and name
+        camera.location = (x_pos, y_pos, z_pos)
         camera.name = "Camera"
-        # The camera needs to be able to see "far away"
         camera.data.clip_end = 500.0
-        # Set the scene to use the camera and to use the correct number of frames
+
+        #Set all cameras to one frame
         for scene in bpy.data.scenes:
             scene.camera = camera
-            scene.frame_end = self.__framesPerOrbit * self.__orbitsPerDTM
+            scene.frame_end = 1
 
-        # Find the camera target object
+        #Find the camera target object
         for camera_target in filter(
                 lambda o: o.name == "CameraTarget",
                 bpy.data.objects
@@ -806,7 +789,6 @@ class DTMViewerRenderContext:
             pass
 
         bpy.ops.object.select_pattern(pattern=camera.name)
-        bpy.ops.object.constraint_add(type='FOLLOW_PATH')
         bpy.ops.object.constraint_add(type='TRACK_TO')
         for constraint in camera.constraints:
             # always watch the camera target
@@ -814,12 +796,15 @@ class DTMViewerRenderContext:
                 constraint.target = camera_target
                 constraint.track_axis = 'TRACK_NEGATIVE_Z'
                 constraint.up_axis = 'UP_Y'
-            # always stay 100 units away from the target
-            if constraint.type == 'FOLLOW_PATH':
-                constraint.target = self.__CameraPath
-                constraint.forward_axis = 'TRACK_NEGATIVE_Z'
-                constraint.up_axis = 'UP_Y'
-                self.__cameraPathConstraint = constraint
+
+        #Adjusting the camera target
+        avg_v = tuple(map(lambda a, b: (a + b) / 2, self.__dtm_min_v, self.__dtm_max_v))
+        delta_v = tuple(map(lambda a, b: abs(a - b), self.__dtm_min_v, self.__dtm_max_v))
+        self.__CameraTarget.location = avg_v
+
+        xy_distance = math.sqrt(delta_v[0] ** 2 + delta_v[1] ** 2)
+        # Save for later...
+        self.__camera_xy_distance = xy_distance
 
     def setupLightSource(self):
         # The default "SUN" points straight down, which is fine for our needs
@@ -885,537 +870,6 @@ class DTMViewerRenderContext:
         self.__dtm_min_v = (min(x), min(y), min(z))
         self.__dtm_max_v = (max(x), max(y), max(z))
 
-    #
-    # Add some custom stereo properties to the selected camera
-    # Taken from Sebastian Schneider's wonderful stereoscopic camera plugin
-    #   http://www.noeol.de/s3d (released on Jun/05/2011)
-    # This should allow the plugin to work properly with the stereo camera we create here
-    #
-    bpy.types.Object.stereo_camera_separation = bpy.props.FloatProperty(
-        attr="stereo_camera_separation",
-        name='stereo_camera_separation',
-        description='Camera Separation in 1/1000 Blender Units',
-        min=0.0, soft_min=0.0, max=10000, soft_max=10000, default=600)
-
-    bpy.types.Object.stereo_focal_distance = bpy.props.FloatProperty(
-        attr="stereo_focal_distance",
-        name='stereo_focal_distance',
-        description='Distance to the Stereo-Window (Zero Parallax) in Blender Units',
-        min=0.0, soft_min=0.0, max=1000, soft_max=1000, default=75)
-
-    bpy.types.Object.max_parallax = bpy.props.FloatProperty(
-        attr="max_parallax",
-        name="max_parallax",
-        description='Max parallax angle in degree. Default 1.0',
-        min=0.0, soft_min=0.0, max=3.0, soft_max=3.0, default=1.0)
-
-    bpy.types.Object.near_plane_distance = bpy.props.FloatProperty(
-        attr="near_plane_distance",
-        name="near_plane_distance",
-        description='Distance to Near-Plane in Blender Units (has no effect on the stereo output)',
-        min=0.0, soft_min=0.0, max=100000, soft_max=100000, default=10)
-
-    bpy.types.Object.far_plane_distance = bpy.props.FloatProperty(
-        attr="far_plane_distance",
-        name="far_plane_distance",
-        description='Distance to Far-Plane in Blender Units (has no effect on the stereo output)',
-        min=0.0, soft_min=0.0, max=100000, soft_max=100000, default=500)
-
-    bpy.types.Object.viewer_distance = bpy.props.FloatProperty(
-        attr="viewer_distance",
-        name="viewer_distance",
-        description='Distance between Viewer and the Projection Screen (e.g. Theater canvas, Stereo-TV or Display) in inch',
-        min=0.0, soft_min=0.0, max=10000, soft_max=10000, default=20)
-
-    bpy.types.Object.stereo_camera_shift_x = bpy.props.FloatProperty(
-        attr="stereo_camera_shift_x",
-        name="stereo_camera_shift_x")
-
-    bpy.types.Object.stereo_camera_delta = bpy.props.FloatProperty(
-        attr="stereo_camera_delta",
-        name="stereo_camera_delta")
-
-    bpy.types.Object.max_disparity = bpy.props.FloatProperty(
-        attr="max_disparity",
-        name="max_disparity")
-
-    bpy.types.Object.toein_angle = bpy.props.FloatProperty(
-        attr="toein_angle",
-        name="toein_angle")
-
-    bpy.types.Object.screen_ppi = bpy.props.IntProperty(
-        attr="screen_ppi",
-        name="screen_ppi",
-        description='Pixel per Inch on the Projection Screen (Theater Canvas, Stereo TV or Display)',
-        min=1, soft_min=1, max=1000, soft_max=1000, default=96)
-
-    bpy.types.Object.show_stereo_window = bpy.props.BoolProperty(
-        attr="show_stereo_window",
-        name="show_stereo_window",
-        default=True)
-
-    bpy.types.Object.show_near_far_plane = bpy.props.BoolProperty(
-        attr="show_near_far_plane",
-        name="show_near_far_plane",
-        default=False)
-
-    bpy.types.Object.camera_type = bpy.props.EnumProperty(
-        attr="camera_type",
-        items=( ("OFFAXIS", "Off-Axis", "Default (best stereo result)"),
-                ("CONVERGE", "Converge", "Toe-In Camera (could create uncomfortable vertical parallax)"),
-                ("PARALLEL", "Parallel", "Simple stereo camera (zero parallax at infinity)")),
-        name="camera_type",
-        description="",
-        default="OFFAXIS")
-
-    def setup3dCamera(self):
-        # Heavily influenced by Sebastian Schneider's plugin with
-        # even heavier modifications for simplicity and supporting
-        # only an OFFAXIS camera here. Since it is compatible with
-        # the original plugin the camera type can be changed
-        # manually inside of blender.
-        camera = bpy.context.scene.camera
-
-        # Add left camera
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.scene.objects.active = camera
-        left_cam = bpy.data.cameras.new('L_' + camera.name)
-        lc_obj = bpy.data.objects.new('L_' + camera.name, left_cam)
-        bpy.context.scene.objects.link(lc_obj)
-
-        # Add right camera
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.scene.objects.active = camera
-        right_cam = bpy.data.cameras.new('R_' + camera.name)
-        rc_obj = bpy.data.objects.new('R_' + camera.name, right_cam)
-        bpy.context.scene.objects.link(rc_obj)
-
-        # Keep the focal point (zero parallax) at the center of the
-        # mesh
-        camera.stereo_focal_distance = self.__camera_xy_distance
-
-        # Make a reasonable separation for the stereo camera effect
-        camera.stereo_camera_separation = self.__camera_xy_distance * 7
-
-        # Get/configure stereo camera parameters
-        stereo_base = camera.stereo_camera_separation / 1000 # 1/1000 Blender Units
-        focal_dist = camera.stereo_focal_distance
-        camera_fov = camera.data.angle
-        theta = camera.max_parallax
-        viewer_dist = camera.viewer_distance
-        ppi = camera.screen_ppi
-        # get the horizonal render resolution
-        render_width = bpy.context.scene.render.resolution_x
-        # calculate delta and shift
-        camera.stereo_camera_delta = (render_width * stereo_base) / (2 * focal_dist * math.tan(camera_fov / 2))
-        camera.stereo_camera_shift_x = camera.stereo_camera_delta / render_width
-
-        # set the left camera
-        left_cam.angle = camera.data.angle
-        left_cam.clip_start = camera.data.clip_start
-        left_cam.clip_end = camera.data.clip_end
-        left_cam.dof_distance = camera.data.dof_distance
-        left_cam.dof_object = camera.data.dof_object
-        left_cam.shift_y = camera.data.shift_y
-        left_cam.shift_x = (camera.stereo_camera_shift_x / 2) + camera.data.shift_x
-        lc_obj.location = -(camera.stereo_camera_separation / 1000) / 2, 0, 0
-        lc_obj.rotation_euler = (0.0, 0.0, 0.0) # reset
-
-        # set the right camera
-        right_cam.angle = camera.data.angle
-        right_cam.clip_start = camera.data.clip_start
-        right_cam.clip_end = camera.data.clip_end
-        right_cam.dof_distance = camera.data.dof_distance
-        right_cam.dof_object = camera.data.dof_object
-        right_cam.shift_y = camera.data.shift_y
-        right_cam.shift_x = -(camera.stereo_camera_shift_x / 2) + camera.data.shift_x
-        rc_obj.location = (camera.stereo_camera_separation / 1000) / 2, 0, 0
-        rc_obj.rotation_euler = (0.0, 0.0, 0.0) # reset
-
-        # add the left/right camera as child
-        lc_obj.parent = camera
-        rc_obj.parent = camera
-
-        # Add Left render scene
-        bpy.ops.scene.new(type='LINK_OBJECTS')
-        bpy.context.scene.name = "Scene.Left"
-        bpy.context.scene.camera = lc_obj
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.screen.scene = bpy.data.scenes['Scene']
-
-        # Add Right render scene
-        bpy.ops.scene.new(type='LINK_OBJECTS')
-        bpy.context.scene.name = "Scene.Right"
-        bpy.context.scene.camera = rc_obj
-        bpy.ops.object.select_all(action='DESELECT')
-
-        # Add composit render scene
-        bpy.ops.scene.new(type='LINK_OBJECTS')
-        bpy.context.scene.name = "Scene.Composite"
-        bpy.context.scene.camera = camera
-        bpy.ops.object.select_all(action='DESELECT')
-
-    def setupOverlayCompositing(self, fgImgPath, bgImgPath):
-        # Store imported images in the .blend
-        bpy.ops.file.make_paths_absolute()
-        bpy.ops.file.pack_all()
-
-        # Use compositing for our render...
-        Scene = bpy.data.scenes['Scene.Composite']
-        Scene.use_nodes = True
-
-        # cleanup
-        Tree = Scene.node_tree
-        Tree.links.remove(Tree.links[0])
-
-        def fg_bg_composite(Tree, Src_output, Dst_input, fgImgPath, bgImgPath):
-            ''' Adds two groups for the fg/bg images '''
-
-            FG_Node = bpy.data.node_groups.new("ForegroundImage", type='COMPOSITE')
-            BG_Node = bpy.data.node_groups.new("BackgroundImage", type='COMPOSITE')
-
-            FG_Node.inputs.new("Source", 'RGBA')
-            FG_Node.outputs.new('Result', 'RGBA')
-
-            FG_Image = FG_Node.nodes.new('IMAGE')
-            FG_Image.image = bpy.data.images.load(fgImgPath)
-            FG_Alpha = FG_Node.nodes.new('ALPHAOVER')
-
-            FG_Node.links.new(FG_Image.outputs['Image'], FG_Alpha.inputs[2])
-            FG_Node.links.new(FG_Node.inputs["Source"], FG_Alpha.inputs[1])
-            FG_Node.links.new(FG_Node.outputs['Result'], FG_Alpha.outputs['Image'])
-
-            # Add foreground image compositing
-            newFGGroup = Tree.nodes.new("GROUP", group=FG_Node)
-            Tree.links.new(newFGGroup.inputs[0], Src_output)
-
-            BG_Node.inputs.new("Source", 'RGBA')
-            BG_Node.outputs.new('Result', 'RGBA')
-
-            BG_Image = BG_Node.nodes.new('IMAGE')
-            BG_Image.image = bpy.data.images.load(bgImgPath)
-
-            BG_Alpha = BG_Node.nodes.new('ALPHAOVER')
-
-            BG_Node.links.new(BG_Image.outputs['Image'], BG_Alpha.inputs[1])
-            BG_Node.links.new(BG_Node.inputs["Source"], BG_Alpha.inputs[2])
-            BG_Node.links.new(BG_Node.outputs['Result'], BG_Alpha.outputs['Image'])
-
-            # Add background image compositing
-            newBGGroup = Tree.nodes.new("GROUP", group=BG_Node)
-            Tree.links.new(newBGGroup.inputs[0], newFGGroup.outputs[0])
-            if Dst_input:
-                Tree.links.new(newBGGroup.outputs[0], Dst_input)
-
-            # return the image output of the fg/bg node
-            return newBGGroup.outputs[0]
-
-        def top_bottom_composite(Scene, Tree, L_Src_output, R_Src_output, Dst_input):
-            ''' Adds a top/bottom stereo render pipeline '''
-            res_x = Scene.render.resolution_x
-            res_y = Scene.render.resolution_y
-
-            # Create a canvas image (if needed) of the appropriate size
-            img_name = 'canvas' + str(res_x) + 'x' + str(res_y * 2)
-            try:
-                img = bpy.data.images[img_name]
-            except:
-                bpy.ops.image.new(
-                    name=img_name,
-                    width=res_x,
-                    height=(res_y * 2),
-                    color=(0, 0, 0, 1)
-                )
-                img = bpy.data.images[img_name]
-
-            # Create a node group to help encapsulate this logic
-            TB_Node = bpy.data.node_groups.new("TopBottom", type='COMPOSITE')
-            TB_Node.inputs.new('L_Image', 'RGBA')
-            TB_Node.inputs.new('R_Image', 'RGBA')
-            TB_Node.outputs.new('Image', 'RGBA')
-
-            # Add top/bottom compositing group to screen
-            newTBGroup = Tree.nodes.new("GROUP", group=TB_Node)
-            Tree.links.new(newTBGroup.inputs['L_Image'], L_Src_output)
-            Tree.links.new(newTBGroup.inputs['R_Image'], R_Src_output)
-            if Dst_input:
-                Tree.links.new(newTBGroup.outputs['Image'], Dst_input)
-
-            # Create a compositing node with the canvas image
-            canvas = TB_Node.nodes.new('IMAGE')
-            canvas.image = img
-            canvas.location = (-120, 7)
-
-            # Add translation nodes
-            top_translate = TB_Node.nodes.new('TRANSLATE')
-            top_translate.location = (-120, -260)
-            top_translate.inputs['X'].default_value = encap_1(0.0)
-            top_translate.inputs['Y'].default_value = encap_1(int(res_y / 2))
-
-            bottom_translate = TB_Node.nodes.new('TRANSLATE')
-            top_translate.location = (-120, -383)
-            bottom_translate.inputs['X'].default_value = encap_1(0.0)
-            bottom_translate.inputs['Y'].default_value = encap_1(-int(res_y / 2))
-
-            # Add screen nodes
-            screen_top = newTBGroup.node_tree.nodes.new('MIX_RGB')
-            screen_top.location = (70, 7)
-            screen_top.blend_type = 'SCREEN'
-            screen_top.inputs[0].default_value = encap_1(1.0)
-
-            screen_bottom = newTBGroup.node_tree.nodes.new('MIX_RGB')
-            screen_bottom.location = (250, 7)
-            screen_bottom.blend_type = 'SCREEN'
-            screen_bottom.inputs[0].default_value = encap_1(1.0)
-
-            # Left input to top of screen
-            newTBGroup.node_tree.links.new(TB_Node.inputs['L_Image'], top_translate.inputs['Image'])
-            newTBGroup.node_tree.links.new(canvas.outputs['Image'], screen_top.inputs[1])
-            newTBGroup.node_tree.links.new(top_translate.outputs['Image'], screen_top.inputs[2])
-
-            # Right input to bottom of screen
-            newTBGroup.node_tree.links.new(TB_Node.inputs['R_Image'], bottom_translate.inputs['Image'])
-            newTBGroup.node_tree.links.new(screen_top.outputs['Image'], screen_bottom.inputs[1])
-            newTBGroup.node_tree.links.new(bottom_translate.outputs['Image'], screen_bottom.inputs[2])
-
-            # Scale result to match render output
-            scale = newTBGroup.node_tree.nodes.new('SCALE')
-            scale.space = 'RELATIVE'
-            scale.inputs['Y'].default_value = encap_1(0.5)
-            scale.location = (400, 7)
-            newTBGroup.node_tree.links.new(screen_bottom.outputs['Image'], scale.inputs['Image'])
-            newTBGroup.node_tree.links.new(TB_Node.outputs['Image'], scale.outputs['Image'])
-
-            # return the new group
-            return newTBGroup
-
-        def left_right_composite(Scene, Tree, L_Src_output, R_Src_output, Dst_input):
-            ''' Adds a left/right stereo render pipeline '''
-            res_x = Scene.render.resolution_x
-            res_y = Scene.render.resolution_y
-
-            # Create a canvas image (if needed) of the appropriate size
-            img_name = 'canvas' + str(res_x * 2) + 'x' + str(res_y)
-            try:
-                img = bpy.data.images[img_name]
-            except:
-                bpy.ops.image.new(
-                    name=img_name,
-                    width=(res_x * 2),
-                    height=res_y,
-                    color=(0, 0, 0, 1)
-                )
-                img = bpy.data.images[img_name]
-
-            # Create a node group to help encapsulate this logic
-            LR_Node = bpy.data.node_groups.new("LeftRight", type='COMPOSITE')
-            LR_Node.inputs.new('L_Image', 'RGBA')
-            LR_Node.inputs.new('R_Image', 'RGBA')
-            LR_Node.outputs.new('Image', 'RGBA')
-
-            # Add left/right compositing group to screen
-            newLRGroup = Tree.nodes.new("GROUP", group=LR_Node)
-            Tree.links.new(newLRGroup.inputs['L_Image'], L_Src_output)
-            Tree.links.new(newLRGroup.inputs['R_Image'], R_Src_output)
-            if Dst_input:
-                Tree.links.new(newLRGroup.outputs['Image'], Dst_input)
-
-            # Create a compositing node with the canvas image
-            canvas = LR_Node.nodes.new('IMAGE')
-            canvas.image = img
-            canvas.location = (-120, 7)
-
-            # Add translation nodes
-            left_translate = LR_Node.nodes.new('TRANSLATE')
-            left_translate.location = (-120, -260)
-            left_translate.inputs['X'].default_value = encap_1(int(res_x / 2))
-            left_translate.inputs['Y'].default_value = encap_1(0)
-
-            right_translate = LR_Node.nodes.new('TRANSLATE')
-            left_translate.location = (-120, -383)
-            right_translate.inputs['X'].default_value = encap_1(-int(res_x / 2))
-            right_translate.inputs['Y'].default_value = encap_1(0)
-
-            # Add screen nodes
-            screen_left = newLRGroup.node_tree.nodes.new('MIX_RGB')
-            screen_left.location = (70, 7)
-            screen_left.blend_type = 'SCREEN'
-            screen_left.inputs[0].default_value = encap_1(1.0)
-
-            screen_right = newLRGroup.node_tree.nodes.new('MIX_RGB')
-            screen_right.location = (250, 7)
-            screen_right.blend_type = 'SCREEN'
-            screen_right.inputs[0].default_value = encap_1(1.0)
-
-            # Left input to left of screen
-            newLRGroup.node_tree.links.new(LR_Node.inputs['L_Image'], left_translate.inputs['Image'])
-            newLRGroup.node_tree.links.new(canvas.outputs['Image'], screen_left.inputs[1])
-            newLRGroup.node_tree.links.new(left_translate.outputs['Image'], screen_left.inputs[2])
-
-            # Right input to right of screen
-            newLRGroup.node_tree.links.new(LR_Node.inputs['R_Image'], right_translate.inputs['Image'])
-            newLRGroup.node_tree.links.new(screen_left.outputs['Image'], screen_right.inputs[1])
-            newLRGroup.node_tree.links.new(right_translate.outputs['Image'], screen_right.inputs[2])
-
-            # Scale result to match render output
-            scale = newLRGroup.node_tree.nodes.new('SCALE')
-            scale.space = 'RELATIVE'
-            scale.inputs['X'].default_value = encap_1(0.5)
-            scale.location = (400, 7)
-            newLRGroup.node_tree.links.new(screen_right.outputs['Image'], scale.inputs['Image'])
-            newLRGroup.node_tree.links.new(LR_Node.outputs['Image'], scale.outputs['Image'])
-
-            # return the new group
-            return newLRGroup
-
-
-        def rc_composite(Scene, Tree, L_Src_output, R_Src_output, Dst_input):
-            ''' Adds one group for the red/cyan stereo image '''
-
-            RC_Node = bpy.data.node_groups.new("RedCyanImage", type='COMPOSITE')
-            RC_Node.inputs.new('L_Image', 'RGBA')
-            RC_Node.inputs.new('R_Image', 'RGBA')
-            RC_Node.outputs.new('Image', 'RGBA')
-
-            SepRGB_Left = RC_Node.nodes.new('SEPRGBA')
-            SepRGB_Right = RC_Node.nodes.new('SEPRGBA')
-            CombRGB = RC_Node.nodes.new('COMBRGBA')
-
-            # Red from left channel, BlueGreen from right
-            RC_Node.links.new(SepRGB_Left.outputs['R'], CombRGB.inputs['R'])
-            RC_Node.links.new(SepRGB_Right.outputs['B'], CombRGB.inputs['B'])
-            RC_Node.links.new(SepRGB_Right.outputs['G'], CombRGB.inputs['G'])
-
-            RC_Node.links.new(RC_Node.inputs["L_Image"], SepRGB_Left.inputs['Image'])
-            RC_Node.links.new(RC_Node.inputs["R_Image"], SepRGB_Right.inputs['Image'])
-            RC_Node.links.new(RC_Node.outputs['Image'], CombRGB.outputs['Image'])
-
-            # Add foreground image compositing
-            newRCGroup = Tree.nodes.new("GROUP", group=RC_Node)
-            Tree.links.new(newRCGroup.inputs['L_Image'], L_Src_output)
-            Tree.links.new(newRCGroup.inputs['R_Image'], R_Src_output)
-            if Dst_input:
-                Tree.links.new(newRCGroup.outputs['Image'], Dst_input)
-
-            # return the new group
-            return newRCGroup
-
-        # Reconfigure default source/destination
-        R_Src = Tree.nodes["Render Layers"]
-        R_Src.name = "Render Layers.Right"
-        R_Src.scene = bpy.data.scenes['Scene.Right']
-        R_Src_output = R_Src.outputs['Image']
-        Default_Dst = Tree.nodes["Composite"]
-
-        # Right camera output to the default destination input
-        # R_Src_output becomes the output of the fg/bg composite stream
-        # R_Src_output = fg_bg_composite(
-        #     Tree,
-        #     R_Src_output,
-        #     Default_Dst.inputs['Image'],
-        #     fgImgPath,
-        #     bgImgPath)
-
-        # Add a similar source for the left channel
-        L_Src = Tree.nodes.new('R_LAYERS')
-        L_Src.name = "Render Layers.Left"
-        L_Src.scene = bpy.data.scenes['Scene.Left']
-        L_Src_output = L_Src.outputs['Image']
-
-        # Add a similar fg/bg composite path for the left channel
-        # L_Src_output = fg_bg_composite(
-        #     Tree,
-        #     L_Src_output,
-        #     None,
-        #     fgImgPath,
-        #     bgImgPath)
-
-        # Add a top/bottom composite file output
-        tb_file_output_node = Tree.nodes.new('OUTPUT_FILE')
-        tb_file_output_node.name = "File Output.TB"
-        tb_file_output_node.base_path = '//tb'
-        try:
-            tb_file_output_node.image_type = 'PNG'
-        except Exception:
-            try:
-                tb_file_output_node.image_settings.file_format = 'PNG'
-            except Exception:
-                tb_file_output_node.format.file_format = 'PNG'
-
-        tbGroup = top_bottom_composite(
-            Scene,
-            Tree,
-            L_Src_output,
-            R_Src_output,
-            tb_file_output_node.inputs['Image'])
-
-        # Add a red/cyan composite file output
-        rc_file_output_node = Tree.nodes.new('OUTPUT_FILE')
-        rc_file_output_node.name = "File Output.RC"
-        rc_file_output_node.base_path = '//rc'
-        try:
-            rc_file_output_node.image_type = 'PNG'
-        except Exception:
-            try:
-                rc_file_output_node.image_settings.file_format = 'PNG'
-            except Exception:
-                rc_file_output_node.format.file_format = 'PNG'
-
-        rcGroup = rc_composite(
-            Scene,
-            Tree,
-            L_Src_output,
-            R_Src_output,
-            rc_file_output_node.inputs['Image'])
-
-        # Add a left/right composite file output
-        lr_file_output_node = Tree.nodes.new('OUTPUT_FILE')
-        lr_file_output_node.name = "File Output.LR"
-        lr_file_output_node.base_path = '//lr'
-        try:
-            lr_file_output_node.image_type = 'PNG'
-        except Exception:
-            try:
-                lr_file_output_node.image_settings.file_format = 'PNG'
-            except Exception:
-                lr_file_output_node.format.file_format = 'PNG'
-
-        lrGroup = left_right_composite(
-            Scene,
-            Tree,
-            L_Src_output,
-            R_Src_output,
-            lr_file_output_node.inputs['Image'])
-
-        # Why I need this again, I don't know. Must be a bug.
-        # Tree.links.new(R_Src_output, Default_Dst.inputs['Image'])
-        # bg_l=Tree.nodes['BackgroundImage'].outputs['Result']
-        # bg_r=Tree.nodes['BackgroundImage.001'].outputs['Result']
-
-        # Tree.links.new(bg_l, rcGroup.inputs['L_Image'])
-        # Tree.links.new(bg_r, rcGroup.inputs['R_Image'])
-
-        # Tree.links.new(bg_l, tbGroup.inputs['L_Image'])
-        # Tree.links.new(bg_r, tbGroup.inputs['R_Image'])
-
-        bpy.context.screen.scene = Scene
-
-    def adjustCameraTarget(self):
-        ''' Attempts to move Camera/CameraTarget into "nice" places '''
-        min_v = self.__dtm_min_v
-        max_v = self.__dtm_max_v
-
-        avg_v = tuple(map(lambda a, b: (a + b) / 2, min_v, max_v))
-        delta_v = tuple(map(lambda a, b: abs(a - b), min_v, max_v))
-        self.__CameraTarget.location = avg_v
-
-        xy_distance = math.sqrt(delta_v[0] ** 2 + delta_v[1] ** 2)
-        y_elev = math.sqrt(xy_distance ** 2 + delta_v[2] ** 2)
-        self.__CameraPath.location = (avg_v[0], avg_v[1], (min_v[2] + y_elev) / 2)
-        self.__CameraPath.scale = ( xy_distance, xy_distance, 1.0 )
-        # Save for later...
-        self.__camera_xy_distance = xy_distance
-
     def cleanupView(self):
         ## Can't align view because there is no pane to apply the view
         # bpy.ops.view3d.view_all(center=True)
@@ -1442,29 +896,18 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
         save_path = os.getcwd()+'/'+save_path[0]+'.blend'
         print('Processing image, saving at: ' + save_path)
 
-    dtm_location = filepath
-
-    framesPerOrbit= 72
-
     newScene = DTMViewerRenderContext(
-        dtm_img=dtm_location,
-        dtm_texture=texture_location,
-        framesPerOrbit=framesPerOrbit
+        dtm_img=filepath,
+        dtm_texture=texture_location
         )
     print('Processing image in Blender, please be patient...')
     newScene.createDefaultContext()
-    newScene.setup3dCamera()
-    # newScene.setupOverlayCompositing(
-    #     fgImgPath="/HiRISE/Users/tims/DTM_blender/foreground.tiff",
-    #     bgImgPath="/HiRISE/Users/tims/DTM_blender/background.tiff"
-    #     )
 
     try:
         newScene.saveAs(save_path)
         print("Saved image at: ", save_path)
-        print("  DTM_IMG:", dtm_location)
+        print("  DTM_IMG:", filepath)
         print("  DTM_TEXTURE:", texture_location)
-        print("  frames per orbit::", framesPerOrbit)
     except:
         print("Not saving blend file...")
         importer = hirise_dtm_importer(context, filepath)
@@ -1476,4 +919,4 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
 
         print("Loading %s" % filepath)
 
-    return {'FINISHED'}
+    return
