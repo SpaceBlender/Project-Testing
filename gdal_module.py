@@ -40,7 +40,7 @@ class GDALDriver(object):
             print('\nFailed to spawn subprocess for gdal hill-shade')
             sys.exit(1)
         print('\n'+'Hill-Shade created.')
-        sub_proc1.terminate()
+        #sub_proc1.terminate()
 
     def gdal_color_relief(self, color_file, color_relief):
     #   Run gdal color_relief on the input dem image using the color_txt_file supplied
@@ -68,7 +68,7 @@ class GDALDriver(object):
             print('\nFailed to spawn subprocess for gdal color-relief')
             sys.exit(1)
         print('\n'+'Color-Relief created.')
-        sub_proc2.terminate()
+        #sub_proc2.terminate()
 
     def hsv_merge(self, merge_location, hill_shade, color_relief, texture_location):
     #   Merge the hillshade and color-relief using the hsv_merge script
@@ -95,7 +95,7 @@ class GDALDriver(object):
             print('Error' + e)
             print('\nFailed to spawn subprocess for hsv_merge.')
             sys.exit(1)
-        sub_proc3.terminate()
+        #sub_proc3.terminate()
 
     def gdal_clean_up(self, hill_shade, color_relief):
         if _platform.system() == "Windows":

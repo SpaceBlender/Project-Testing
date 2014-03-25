@@ -730,15 +730,16 @@ class DTMViewerRenderContext:
     #   1 Lamp (Sun)
     #   1 Camera
     #   1 Empty (CameraTarget)
-    def __init__(self, dtm_img, dtm_texture=None):
+    def __init__(self, dtm_img, dtm_resolution, dtm_texture=None):
         self.__img = dtm_img
         self.__texture = dtm_texture
+        self.__resolution = dtm_resolution
 
     def createDefaultContext(self):
         ''' clears the current scene and fills it with a DTM '''
         self.clearScene()
         self.addEmptyTarget()
-        self.setupRender()
+        self.setupRender(self.__resolution)
         self.setupLightSource()
         self.addDTM()
         self.setupDefaultCamera()
@@ -811,14 +812,21 @@ class DTMViewerRenderContext:
         bpy.ops.object.lamp_add(type='SUN')
 
     # Set the rendering defaults
-    def setupRender(self):
+    def setupRender(self, resolution):
         render = bpy.context.scene.render
         # Don't bother raytracing since we will likely put a real image on the
         # mesh that already contains shadows
         render.use_raytrace = False
-        render.resolution_x = 1920
-        render.resolution_y = 1080
-        render.resolution_percentage = 100
+
+        #Adjust the resolution by the percentage chosen by the user
+        percentage = resolution/100
+
+        render.resolution_x = 1920*percentage
+        render.resolution_y = 1080*percentage
+        render.resolution_percentage = 100*percentage
+
+
+
 
     # Add the DTM to the scene
     def addDTM(self):
@@ -878,8 +886,33 @@ class DTMViewerRenderContext:
     def saveAs(self, path):
         bpy.ops.wm.save_as_mainfile(filepath=path, check_existing=False)
 
+       #added this in for fun
+    def createMist(self, map_file=None):
+        # if map != None:
+        #     file = open(map_file)
+        #     lines = file.readlines()
+        #     midcolor = lines[2]
+        #     highcolor = ""
+
+
+        #set general colors for background and mist
+        world = bpy.context.scene.world
+        world.ambient_color = (0.5, 0.0, 0.0)
+        world.horizon_color = (1.0, 0.5, 0.0)
+        world.zenith_color = (0.75, 0.0, 0.0)
+        world.use_sky_paper = True
+        world.use_sky_blend = True
+        world.use_sky_real = True
+
+        mist = bpy.context.scene.world.mist_settings
+        mist.use_mist = True
+        mist.start = 1.0
+        mist.depth = 100 - min(abs(self.__dtm_min_v[0]-self.__dtm_max_v[0])/2, abs(self.__dtm_min_v[1]-self.__dtm_max_v[1])/2)
+        mist.height = max(self.__dtm_max_v[2] - 5, 0)
+        mist.intensity = 0.15
+
 # SpaceBlenders Code starts here
-def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pattern, texture_location, cropVars):
+def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pattern, texture_location, cropVars, resolution):
     print("Bin Mode: %s" % bin_mode)
     print("Scale: %f" % scale)
     print("Color Mapping: %s" % color_pattern)
@@ -898,10 +931,12 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
 
     newScene = DTMViewerRenderContext(
         dtm_img=filepath,
+        dtm_resolution=resolution,
         dtm_texture=texture_location
         )
     print('Processing image in Blender, please be patient...')
     newScene.createDefaultContext()
+    newScene.createMist()
 
     try:
         newScene.saveAs(save_path)
