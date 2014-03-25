@@ -35,7 +35,7 @@ bl_info = {
     "version": (0, 1, 0),
     "blender": (2, 63, 0),
     "warning": "Requires GDAL to be installed.",
-    "location": "File > Import > Import DEM from IMG (.IMG)",
+    "location": "File > Import > Import and SpaceBlend DEM (.IMG)",
     "description": "Import DEM, apply texture, and create flyover.",
     "wiki_url": "",
     "tracker_url": "",
@@ -43,7 +43,7 @@ bl_info = {
 
 ############################## REGISTRATION #################################
 def menu_import(self, context):
-    self.layout.operator(ui_module.UI_Driver.bl_idname, text="Import DEM from IMG (.IMG)")
+    self.layout.operator(ui_module.UI_Driver.bl_idname, text="Import and SpaceBlend DEM(.IMG)")
 
 def register():
     bpy.utils.register_module(__name__)

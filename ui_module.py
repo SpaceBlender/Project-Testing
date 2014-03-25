@@ -8,7 +8,7 @@ import os
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
     bl_idname = "import_dem.img"
-    bl_label  = "Import DEM from IMG (.IMG)"
+    bl_label  = "Import and SpaceBlend DEM (.IMG)"
     bl_options = {'UNDO'}
     filter_glob = StringProperty(default="*.IMG", options={'HIDDEN'})
 
@@ -49,15 +49,28 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ('LinearPattern', "Linear Pattern", "Create a linear flyover")),
         name="Flyover", description="Import Flyover", default='NoFlyover')
 
+
+    #Option to add mist to the bacjkground of the image
+    stars = BoolProperty(name="Apply Stars",
+            description="Applies stars to the background",
+            default=False
+            )
+
+    #Option to add mist to the image
+    mist = BoolProperty(name="Apply Mist",
+        description="Applies mist to the image",
+        default=False
+        )
+
     #Render Resolution Lower the resolution the faster the render
     resolution = IntProperty(name="Render Resolution %",
-                          description="Change image resolution",
-                          min=10,
-                          max=100,
-                          soft_min=10,
-                          soft_max=100,
-                          default=100,
-                          step=5)
+                              description="Change image resolution",
+                              min=10,
+                              max=100,
+                              soft_min=10,
+                              soft_max=100,
+                              default=100,
+                              step=5)
     #Scaling Control
     scale = FloatProperty(name="Scale",
                           description="Scale the IMG",
@@ -115,7 +128,9 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
                                    flyover_pattern=self.flyover_pattern,
                                    texture_location=texture_location,
                                    cropVars=False,
-                                   resolution = self.resolution
+                                   resolution = self.resolution,
+                                   stars=self.stars,
+                                   mist=self.mist
                                    )
         ################################################################################
         ###############################Execute Flyovers#######################################

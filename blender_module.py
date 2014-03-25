@@ -730,10 +730,12 @@ class DTMViewerRenderContext:
     #   1 Lamp (Sun)
     #   1 Camera
     #   1 Empty (CameraTarget)
-    def __init__(self, dtm_img, dtm_resolution, dtm_texture=None):
+    def __init__(self, dtm_img, dtm_resolution, dtm_stars, dtm_mist, dtm_texture=None):
         self.__img = dtm_img
         self.__texture = dtm_texture
         self.__resolution = dtm_resolution
+        self.__stars = dtm_stars
+        self.__mist = dtm_mist
 
     def createDefaultContext(self):
         ''' clears the current scene and fills it with a DTM '''
@@ -878,30 +880,45 @@ class DTMViewerRenderContext:
         self.__dtm_min_v = (min(x), min(y), min(z))
         self.__dtm_max_v = (max(x), max(y), max(z))
 
-    #added this in for fun
-    def createMist(self, map_file=None):
-        if map != None:
-            file = open(map_file)
-            lines = file.readlines()
-            midcolor = lines[2]
-            highcolor = ""
-
-
-        #set general colors for background and mist
+    #add stars in the sky to look space like
+    def createStars(self):
+        print("Adding stars to background...")
         world = bpy.context.scene.world
-        world.ambient_color = (0.5, 0.0, 0.0)
-        world.horizon_color = (1.0, 0.5, 0.0)
-        world.zenith_color = (0.75, 0.0, 0.0)
+        #Set the background to black
+        world.horizon_color = (0.0, 0.0, 0.0)
+        #Set Zenith to gray
+        world.zenith_color = (0.095, 0.095, 0.095)
         world.use_sky_paper = True
         world.use_sky_blend = True
-        world.use_sky_real = True
+        #Adjust the size of the stars and turn them on
+        world.star_settings.size = 0.25
+        world.star_settings.use_stars = True
+        print("Stars applied successfully")
+
+    #Create mist over the dem surface
+    def createMist(self, map_file=None):
+        # if map != None:
+        #     file = open(map_file)
+        #     lines = file.readlines()
+        #     midcolor = lines[2]
+        #     highcolor = ""
+
+        print("Creating mistic mist...")
+        #set general colors for background and mist
+        world = bpy.context.scene.world
+        world.horizon_color = (0.0, 0.0, 0.0)
+        world.zenith_color = (0.095, 0.095, 0.095)
+        world.use_sky_paper = True
+        world.use_sky_blend = True
 
         mist = bpy.context.scene.world.mist_settings
         mist.use_mist = True
         mist.start = 1.0
-        mist.depth = 100 - min(abs(self.__dtm_min_v[0]-self.__dtm_max_v[0])/2, abs(self.__dtm_min_v[1]-self.__dtm_max_v[1])/2)
+        mist.depth = 100 - min(abs(self.__dtm_min_v[0]-self.__dtm_max_v[0])/2,
+                               abs(self.__dtm_min_v[1]-self.__dtm_max_v[1])/2)
         mist.height = max(self.__dtm_max_v[2] - 5, 0)
         mist.intensity = 0.15
+        print("Mist created")
 
     def cleanupView(self):
         ## Can't align view because there is no pane to apply the view
@@ -911,33 +928,10 @@ class DTMViewerRenderContext:
     def saveAs(self, path):
         bpy.ops.wm.save_as_mainfile(filepath=path, check_existing=False)
 
-       #added this in for fun
-    def createMist(self, map_file=None):
-        # if map != None:
-        #     file = open(map_file)
-        #     lines = file.readlines()
-        #     midcolor = lines[2]
-        #     highcolor = ""
 
 
-        #set general colors for background and mist
-        world = bpy.context.scene.world
-        world.ambient_color = (0.5, 0.0, 0.0)
-        world.horizon_color = (1.0, 0.5, 0.0)
-        world.zenith_color = (0.75, 0.0, 0.0)
-        world.use_sky_paper = True
-        world.use_sky_blend = True
-        world.use_sky_real = True
-
-        mist = bpy.context.scene.world.mist_settings
-        mist.use_mist = True
-        mist.start = 1.0
-        mist.depth = 100 - min(abs(self.__dtm_min_v[0]-self.__dtm_max_v[0])/2, abs(self.__dtm_min_v[1]-self.__dtm_max_v[1])/2)
-        mist.height = max(self.__dtm_max_v[2] - 5, 0)
-        mist.intensity = 0.15
-
-# SpaceBlenders Code starts here
-def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pattern, texture_location, cropVars, resolution):
+def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pattern,
+         texture_location, cropVars, resolution, stars, mist):
     print("Bin Mode: %s" % bin_mode)
     print("Scale: %f" % scale)
     print("Color Mapping: %s" % color_pattern)
@@ -957,11 +951,17 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
     newScene = DTMViewerRenderContext(
         dtm_img=filepath,
         dtm_resolution=resolution,
-        dtm_texture=texture_location
+        dtm_texture=texture_location,
+        dtm_stars=stars,
+        dtm_mist=mist
         )
     print('Processing image in Blender, please be patient...')
     newScene.createDefaultContext()
-    newScene.createMist()
+
+    if mist == True:
+        newScene.createMist()
+    if stars == True:
+        newScene.createStars()
 
     try:
         newScene.saveAs(save_path)
