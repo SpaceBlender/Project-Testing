@@ -17,7 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 
-from struct import pack, unpack, unpack_from
+from struct import pack, unpack
 from sys import platform as _platform
 import queue, threading
 import bpy
@@ -870,6 +870,31 @@ class DTMViewerRenderContext:
         self.__dtm_min_v = (min(x), min(y), min(z))
         self.__dtm_max_v = (max(x), max(y), max(z))
 
+    #added this in for fun
+    def createMist(self, map_file=None)
+        if map != None:
+            file = open(map_file)
+            lines = file.readlines()
+            midcolor = lines[2]
+            highcolor = 
+
+
+        #set general colors for background and mist
+        world = bpy.context.scene.world
+        world.ambient_color = (0.5, 0.0, 0.0)
+        world.horizon_color = (1.0, 0.5, 0.0)
+        world.zenith_color = (0.75, 0.0, 0.0)
+        world.use_sky_paper = True
+        world.use_sky_blend = True
+        world.use_sky_real = True
+
+        mist = bpy.context.scene.world.mist_settings
+        mist.use_mist = True
+        mist.start = 1.0
+        mist.depth = 100 - min(abs(self.__dtm_min_v[0]-self.__dtm_max_v[0])/2, abs(self.__dtm_min_v[1]-self.__dtm_max_v[1])/2)
+        mist.height = max(self.__dtm_max_v[2] - 5, 0)
+        mist.intensity = 0.15
+
     def cleanupView(self):
         ## Can't align view because there is no pane to apply the view
         # bpy.ops.view3d.view_all(center=True)
@@ -902,6 +927,7 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
         )
     print('Processing image in Blender, please be patient...')
     newScene.createDefaultContext()
+    newScene.createMist()
 
     try:
         newScene.saveAs(save_path)
