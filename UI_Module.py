@@ -1,10 +1,9 @@
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ImportHelper
-from . import blender_module
-from . import gdal_module
-from . import flyover_module
-import platform as _platform
+from . import Blender_Module
+from . import GDAL_Module
+from . import Flyover_Module
 import os
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
@@ -88,7 +87,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             hill_shade = os.path.normpath("\""+project_location+"/maps/hillshade.tiff\"")
             color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
 
-            gdal = gdal_module.GDALDriver(dtm_location)
+            gdal = GDAL_Module.GDALDriver(dtm_location)
             gdal.gdal_clean_up(hill_shade, color_relief)
             gdal.gdal_hillshade(hill_shade)
             gdal.gdal_color_relief(color_file, color_relief)
@@ -99,7 +98,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
 
         ################################################################################
         ####################Execute DEM Importer and Blender Module#####################
-        blender_module.load(self, context,
+        vectorDEM = Blender_Module.load(self, context,
                                    filepath=self.filepath,
                                    scale=self.scale,
                                    bin_mode=self.bin_mode,
@@ -115,7 +114,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             pass
         elif self.flyover_pattern == "CirclePattern":
             print("Entering circular pattern")
-            flyover = flyover_module.flyover_driver()
+            flyover = Flyover_Module.flyover_driver( vectorDEM )
             flyover.circleFlyoverPattern()
 
         #todo add extra flyovers

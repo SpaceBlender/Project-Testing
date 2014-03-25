@@ -744,6 +744,9 @@ class DTMViewerRenderContext:
         self.setupDefaultCamera()
         self.cleanupView()
 
+    def getVector(self):
+        return self.vectorDEM
+
     # Adds the Empty target for the camera to track
     def addEmptyTarget(self):
         # Add an empty object called CameraTarget
@@ -761,10 +764,9 @@ class DTMViewerRenderContext:
             bpy.data.materials.remove(mat)
 
     # Setup a camera to track our empty target
-    def setupDefaultCamera(self, Z=130.0):
-        x_pos = (self.__dtm_max_v[0] - self.__dtm_min_v[0])+50
-        y_pos = (self.__dtm_max_v[1] - self.__dtm_min_v[1])
-        z_pos = ( self.__dtm_max_v[2]+Z)
+    def setupDefaultCamera(self, shift=1.1):
+        delta_v = tuple(map(lambda a, b: a - b, self.__dtm_max_v, self.__dtm_min_v))
+        xy_distance = math.sqrt(delta_v[0] ** 2 + delta_v[1] ** 2)
 
         # Create a new default camera
         bpy.ops.object.camera_add()
@@ -772,7 +774,7 @@ class DTMViewerRenderContext:
             pass
 
         #Set cmera location and name
-        camera.location = (x_pos, y_pos, z_pos)
+        camera.location = (self.__dtm_min_v[0], self.__dtm_min_v[1], delta_v[2] + xy_distance*0.33)
         camera.name = "Camera"
         camera.data.clip_end = 500.0
 
@@ -782,12 +784,10 @@ class DTMViewerRenderContext:
             scene.frame_end = 1
 
         #Find the camera target object
-        for camera_target in filter(
-                lambda o: o.name == "CameraTarget",
-                bpy.data.objects
-        ):
+        for camera_target in filter(lambda o: o.name == "CameraTarget", bpy.data.objects):
             pass
 
+        camera_target.location = (self.__dtm_min_v[0]+delta_v[0]/2, self.__dtm_min_v[1]+delta_v[1]/2, self.__dtm_min_v[2]+delta_v[2]/2)
         bpy.ops.object.select_pattern(pattern=camera.name)
         bpy.ops.object.constraint_add(type='TRACK_TO')
         for constraint in camera.constraints:
@@ -797,14 +797,14 @@ class DTMViewerRenderContext:
                 constraint.track_axis = 'TRACK_NEGATIVE_Z'
                 constraint.up_axis = 'UP_Y'
 
-        #Adjusting the camera target
-        avg_v = tuple(map(lambda a, b: (a + b) / 2, self.__dtm_min_v, self.__dtm_max_v))
-        delta_v = tuple(map(lambda a, b: abs(a - b), self.__dtm_min_v, self.__dtm_max_v))
-        self.__CameraTarget.location = avg_v
 
-        xy_distance = math.sqrt(delta_v[0] ** 2 + delta_v[1] ** 2)
+        #Adjusting the camera target
+        self.__CameraTarget = camera_target.location
+        self.__CameraLocation = camera.location
+
         # Save for later...
-        self.__camera_xy_distance = xy_distance
+        self.vectorDEM = delta_v
+
 
     def setupLightSource(self):
         # The default "SUN" points straight down, which is fine for our needs
@@ -919,4 +919,5 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
 
         print("Loading %s" % filepath)
 
-    return
+    print("Vector: ", newScene.getVector())
+    return newScene.getVector()

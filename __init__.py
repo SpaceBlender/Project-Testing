@@ -17,15 +17,15 @@
 
 if "bpy" in locals():
     import imp
-    imp.reload(gdal_module)
+    imp.reload(GDAL_Module)
     imp.reload(UI_Module)
-    imp.reload(blender_module)
-    #imp.reload(Flyover_Module)
+    imp.reload(Blender_Module)
+    imp.reload(Flyover_Module)
 else:
-    from . import blender_module
-    #from . import Flyover_Module
+    from . import Blender_Module
+    from . import Flyover_Module
     from . import UI_Module
-    from . import gdal_module
+    from . import GDAL_Module
 
 import bpy
 
