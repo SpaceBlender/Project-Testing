@@ -879,12 +879,12 @@ class DTMViewerRenderContext:
         self.__dtm_max_v = (max(x), max(y), max(z))
 
     #added this in for fun
-    def createMist(self, map_file=None)
+    def createMist(self, map_file=None):
         if map != None:
             file = open(map_file)
             lines = file.readlines()
             midcolor = lines[2]
-            highcolor = 
+            highcolor = ""
 
 
         #set general colors for background and mist
