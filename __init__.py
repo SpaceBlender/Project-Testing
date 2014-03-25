@@ -17,15 +17,15 @@
 
 if "bpy" in locals():
     import imp
-    imp.reload(GDAL_Module)
-    imp.reload(UI_Module)
-    imp.reload(Blender_Module)
-    imp.reload(Flyover_Module)
+    imp.reload(gdal_module)
+    imp.reload(ui_module)
+    imp.reload(blender_module)
+    imp.reload(flyover_module)
 else:
-    from . import Blender_Module
-    from . import Flyover_Module
-    from . import UI_Module
-    from . import GDAL_Module
+    from . import blender_module
+    from . import flyover_module
+    from . import ui_module
+    from . import gdal_module
 
 import bpy
 
@@ -43,7 +43,7 @@ bl_info = {
 
 ############################## REGISTRATION #################################
 def menu_import(self, context):
-    self.layout.operator(UI_Module.UI_Driver.bl_idname, text="Import DEM from IMG (.IMG)")
+    self.layout.operator(ui_module.UI_Driver.bl_idname, text="Import DEM from IMG (.IMG)")
 
 def register():
     bpy.utils.register_module(__name__)

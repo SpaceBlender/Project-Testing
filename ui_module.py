@@ -1,9 +1,9 @@
 import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ImportHelper
-from . import Blender_Module
-from . import GDAL_Module
-from . import Flyover_Module
+from . import blender_module
+from . import gdal_module
+from . import flyover_module
 import os
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
@@ -17,7 +17,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
     #('BrownAndRedColorPattern', "Brown & Red (Mars)", "Not colorblind friendly")
     #('GrayscaleColorPattern', "Grayscale (8-16 bit grays, Lunar)", "Colorblind friendly")
     #Haven't determined color blindness support
-    color_pattern = EnumProperty( items=(
+    color_pattern = EnumProperty(items=(
         ('NoColorPattern', "None", "Will skip GDAL execution"),
         ('Rainbow_Saturated', 'Rainbow Saturated', 'Colorblind friendly'),
         ('Rainbow_Medium', 'Rainbow Medium', 'Colorblind friendly'),
@@ -47,8 +47,17 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ('DiamondPattern', "Diamond Pattern", "Create a diagonal flyover"),
         ('TriangularPattern', "Triangular Pattern", "Create a diagonal flyover"),
         ('LinearPattern', "Linear Pattern", "Create a linear flyover")),
-                                   name="Flyover", description="Import Flyover", default='NoFlyover')
+        name="Flyover", description="Import Flyover", default='NoFlyover')
 
+    #Render Resolution Lower the resolution the faster the render
+    resolution = IntProperty(name="Render Resolution %",
+                          description="Change image resolution",
+                          min=10,
+                          max=100,
+                          soft_min=10,
+                          soft_max=100,
+                          default=100,
+                          step=5)
     #Scaling Control
     scale = FloatProperty(name="Scale",
                           description="Scale the IMG",
@@ -87,10 +96,10 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             hill_shade = os.path.normpath("\""+project_location+"/maps/hillshade.tiff\"")
             color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
 
-            gdal = GDAL_Module.GDALDriver(dtm_location)
-            gdal.gdal_clean_up(hill_shade, color_relief)
+            gdal = gdal_module.GDALDriver(dtm_location)
             gdal.gdal_hillshade(hill_shade)
             gdal.gdal_color_relief(color_file, color_relief)
+           # gdal.gdal_clean_up(hill_shade, color_relief)
             gdal.hsv_merge(merge_location, hill_shade, color_relief, texture_location)
 
             print('\nSaving texture at: ' + texture_location)
@@ -98,14 +107,15 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
 
         ################################################################################
         ####################Execute DEM Importer and Blender Module#####################
-        vectorDEM = Blender_Module.load(self, context,
+        vectorDEM = blender_module.load(self, context,
                                    filepath=self.filepath,
                                    scale=self.scale,
                                    bin_mode=self.bin_mode,
                                    color_pattern=self.color_pattern,
                                    flyover_pattern=self.flyover_pattern,
                                    texture_location=texture_location,
-                                   cropVars=False
+                                   cropVars=False,
+                                   resolution = self.resolution
                                    )
         ################################################################################
         ###############################Execute Flyovers#######################################
@@ -114,8 +124,8 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             pass
         elif self.flyover_pattern == "CirclePattern":
             print("Entering circular pattern")
-            flyover = Flyover_Module.flyover_driver( vectorDEM )
-            flyover.circleFlyoverPattern()
+            flyover = flyover_module.FlyoverDriver(vectorDEM)
+            flyover.circle_flyover_pattern()
 
         #todo add extra flyovers
 

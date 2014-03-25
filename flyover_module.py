@@ -4,7 +4,7 @@ import bpy
 from bpy.props import *
 import math
 
-class flyover_driver( object ):
+class FlyoverDriver( object ):
     #set some default properties for our flyover
     def __init__(self, dem_vector, cycles=1, frames=72):
         for camera in filter(lambda o: o.type == 'CAMERA', bpy.data.objects):
@@ -25,7 +25,7 @@ class flyover_driver( object ):
 
     #Creates a circular path around the whole dem the camera tracks the
     #center of the DEM
-    def circleFlyoverPattern(self):
+    def circle_flyover_pattern(self):
         # Add a circular path that dicatates the camera path
         bpy.ops.curve.primitive_bezier_circle_add()
         circle = bpy.context.object
