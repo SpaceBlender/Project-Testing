@@ -45,7 +45,6 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ('OvularPattern', "Ovular Pattern", "Create a generic ovular flyover"),
         ('HourGlassPattern', "Hour Glass Pattern", "Create a generic X like flyover"),
         ('DiamondPattern', "Diamond Pattern", "Create a diagonal flyover"),
-        ('TriangularPattern', "Triangular Pattern", "Create a diagonal flyover"),
         ('LinearPattern', "Linear Pattern", "Create a linear flyover")),
         name="Flyover", description="Import Flyover", default='NoFlyover')
 
@@ -137,11 +136,22 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         if self.flyover_pattern == "NoFlyover":
             print("Skipping flyover")
             pass
-        elif self.flyover_pattern == "CirclePattern":
-            print("Entering circular pattern")
+        else:
             flyover = flyover_module.FlyoverDriver(vectorDEM)
-            flyover.circle_flyover_pattern()
-
-        #todo add extra flyovers
+            if self.flyover_pattern == "CirclePattern":
+                print("Entering circular pattern")
+                flyover.circle_pattern()
+            elif self.flyover_pattern == "OvularPattern":
+                print("Entering oval pattern")
+                flyover.oval_pattern()
+            elif self.flyover_pattern == "HourGlassPattern":
+                print("Entering hour glass pattern")
+                flyover.hourglass_pattern()
+            elif self.flyover_pattern == "DiamondPattern":
+                print("Entering diamond pattern")
+                flyover.diamond_pattern()
+            elif self.flyover_pattern == "LinearPattern":
+                print("Entering linear pattern")
+                flyover.linear_pattern()
 
         return {'FINISHED'}
