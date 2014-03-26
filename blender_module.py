@@ -890,9 +890,10 @@ class DTMViewerRenderContext:
         #Set the background to black
         world.horizon_color = (0.0, 0.0, 0.0)
         #Set Zenith to gray
-        world.zenith_color = (0.095, 0.095, 0.095)
+        world.zenith_color = (0.040, 0.040, 0.040)
         world.use_sky_paper = True
         world.use_sky_blend = True
+        world.use_sky_real = True
         #Adjust the size of the stars and turn them on
         world.star_settings.size = 0.25
         world.star_settings.use_stars = True
@@ -910,9 +911,10 @@ class DTMViewerRenderContext:
         #set general colors for background and mist
         world = bpy.context.scene.world
         world.horizon_color = (0.0, 0.0, 0.0)
-        world.zenith_color = (0.095, 0.095, 0.095)
+        world.zenith_color = (0.040, 0.040, 0.040)
         world.use_sky_paper = True
         world.use_sky_blend = True
+        world.use_sky_real = True
 
         mist = bpy.context.scene.world.mist_settings
         mist.use_mist = True
