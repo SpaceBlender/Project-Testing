@@ -750,6 +750,12 @@ class DTMViewerRenderContext:
     def getVector(self):
         return self.vectorDEM
 
+    def getMinVertex(self):
+        return self.__dtm_min_v
+
+    def getMaxVertex(self):
+        return self.__dtm_max_v
+
     # Adds the Empty target for the camera to track
     def addEmptyTarget(self):
         # Add an empty object called CameraTarget
@@ -826,9 +832,6 @@ class DTMViewerRenderContext:
         render.resolution_x = 1920*percentage
         render.resolution_y = 1080*percentage
         render.resolution_percentage = 100*percentage
-
-
-
 
     # Add the DTM to the scene
     def addDTM(self):
@@ -980,4 +983,4 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
         print("Loading %s" % filepath)
 
     print("Vector: ", newScene.getVector())
-    return newScene.getVector()
+    return newScene.getVector(), newScene.getMinVertex(), newScene.getMaxVertex()

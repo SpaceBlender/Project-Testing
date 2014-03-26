@@ -109,9 +109,9 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
             color_relief = os.path.normpath("\""+project_location+"/maps/colorrelief.tiff\"")
 
             gdal = gdal_module.GDALDriver(dtm_location)
+            #gdal.gdal_clean_up(hill_shade, color_relief)
             gdal.gdal_hillshade(hill_shade)
             gdal.gdal_color_relief(color_file, color_relief)
-           # gdal.gdal_clean_up(hill_shade, color_relief)
             gdal.hsv_merge(merge_location, hill_shade, color_relief, texture_location)
 
             print('\nSaving texture at: ' + texture_location)
@@ -119,25 +119,25 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
 
         ################################################################################
         ####################Execute DEM Importer and Blender Module#####################
-        vectorDEM = blender_module.load(self, context,
-                                   filepath=self.filepath,
-                                   scale=self.scale,
-                                   bin_mode=self.bin_mode,
-                                   color_pattern=self.color_pattern,
-                                   flyover_pattern=self.flyover_pattern,
-                                   texture_location=texture_location,
-                                   cropVars=False,
-                                   resolution = self.resolution,
-                                   stars=self.stars,
-                                   mist=self.mist
-                                   )
+        dem_vector, dem_min_vertex, dem_max_vertex = blender_module.load(self, context,
+                                                                           filepath=self.filepath,
+                                                                           scale=self.scale,
+                                                                           bin_mode=self.bin_mode,
+                                                                           color_pattern=self.color_pattern,
+                                                                           flyover_pattern=self.flyover_pattern,
+                                                                           texture_location=texture_location,
+                                                                           cropVars=False,
+                                                                           resolution = self.resolution,
+                                                                           stars=self.stars,
+                                                                           mist=self.mist
+                                                                           )
         ################################################################################
         ###############################Execute Flyovers#######################################
         if self.flyover_pattern == "NoFlyover":
             print("Skipping flyover")
             pass
         else:
-            flyover = flyover_module.FlyoverDriver(vectorDEM)
+            flyover = flyover_module.FlyoverDriver(dem_vector, dem_min_vertex, dem_max_vertex)
             if self.flyover_pattern == "CirclePattern":
                 print("Entering circular pattern")
                 flyover.circle_pattern()
