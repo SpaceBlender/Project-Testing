@@ -91,6 +91,7 @@ class GDALDriver(object):
                             outstr = outstr.replace(char, '')
                     sys.stdout.write(outstr)
                     sys.stdout.flush()
+
         except subprocess.SubprocessError as e:
             print('Error' + e)
             print('\nFailed to spawn subprocess for hsv_merge.')
