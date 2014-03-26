@@ -49,7 +49,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         name="Flyover", description="Import Flyover", default='NoFlyover')
 
 
-    #Option to add mist to the bacjkground of the image
+    #Option to add mist to the background of the image
     stars = BoolProperty(name="Apply Stars",
             description="Applies stars to the background",
             default=False
