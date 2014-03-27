@@ -110,7 +110,6 @@ class FlyoverDriver(object):
 
         return
 
-
     def diamond_pattern(self):
         #build path
         p1 = Vector((self.min_vertex[0] + self.vector[0]/2, self.min_vertex[1]+2, self.max_vertex[2]+5))
@@ -154,9 +153,9 @@ class FlyoverDriver(object):
 
     #Liner Function itself. Calls helper functions in under Liner Helper Functions.
     @staticmethod
-    def linear_pattern(self):
+    def linear_pattern():
         list_holder = FlyoverDriver.get_liner_path()
-        FlyoverDriver.make_path("Curve", "Liner", list_holder)
+        FlyoverDriver.make_path("Curve", "Linear", list_holder)
         return
 
     #############################################################
