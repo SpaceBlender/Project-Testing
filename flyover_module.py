@@ -1,4 +1,5 @@
 import bpy
+import math
 from bpy.props import *
 from mathutils import Vector
 
