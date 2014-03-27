@@ -740,30 +740,10 @@ class DTMViewerRenderContext:
     def createDefaultContext(self):
         ''' clears the current scene and fills it with a DTM '''
         self.clearScene()
-        self.addEmptyTarget()
+        self.addDTM()
         self.setupRender(self.__resolution)
         self.setupLightSource()
-        self.addDTM()
-        self.setupDefaultCamera()
         self.cleanupView()
-
-    def getVector(self):
-        return self.vectorDEM
-
-    def getMinVertex(self):
-        return self.__dtm_min_v
-
-    def getMaxVertex(self):
-        return self.__dtm_max_v
-
-    # Adds the Empty target for the camera to track
-    def addEmptyTarget(self):
-        # Add an empty object called CameraTarget
-        bpy.ops.object.add(type='EMPTY')
-        for o in filter(lambda o: o.type == 'EMPTY', bpy.data.objects):
-            mt = o
-        mt.name = 'CameraTarget'
-        self.__CameraTarget = mt
 
     # Clear the scene by removing all objects/materials
     def clearScene(self):
@@ -772,52 +752,11 @@ class DTMViewerRenderContext:
         for mat in bpy.data.materials:
             bpy.data.materials.remove(mat)
 
-    # Setup a camera to track our empty target
-    def setupDefaultCamera(self, shift=1.1):
-        delta_v = tuple(map(lambda a, b: a - b, self.__dtm_max_v, self.__dtm_min_v))
-        xy_distance = math.sqrt(delta_v[0] ** 2 + delta_v[1] ** 2)
-
-        # Create a new default camera
-        bpy.ops.object.camera_add()
-        for camera in filter(lambda o: o.type == 'CAMERA', bpy.data.objects):
-            pass
-
-        #Set cmera location and name
-        camera.location = (self.__dtm_min_v[0], self.__dtm_min_v[1], delta_v[2] + xy_distance*0.33)
-        camera.name = "Camera"
-        camera.data.clip_end = 500.0
-
-        #Set all cameras to one frame
-        for scene in bpy.data.scenes:
-            scene.camera = camera
-            scene.frame_end = 1
-
-        #Find the camera target object
-        for camera_target in filter(lambda o: o.name == "CameraTarget", bpy.data.objects):
-            pass
-
-        camera_target.location = (self.__dtm_min_v[0]+delta_v[0]/2, self.__dtm_min_v[1]+delta_v[1]/2, self.__dtm_min_v[2]+delta_v[2]/2)
-        bpy.ops.object.select_pattern(pattern=camera.name)
-        bpy.ops.object.constraint_add(type='TRACK_TO')
-        for constraint in camera.constraints:
-            # always watch the camera target
-            if constraint.type == 'TRACK_TO':
-                constraint.target = camera_target
-                constraint.track_axis = 'TRACK_NEGATIVE_Z'
-                constraint.up_axis = 'UP_Y'
-
-
-        #Adjusting the camera target
-        self.__CameraTarget = camera_target.location
-        self.__CameraLocation = camera.location
-
-        # Save for later...
-        self.vectorDEM = delta_v
-
-
     def setupLightSource(self):
         # The default "SUN" points straight down, which is fine for our needs
         bpy.ops.object.lamp_add(type='SUN')
+        sun = bpy.data.objects['Sun']
+        sun.location = (self.__dtm_min_v[0]+self.__delta_v[0]/2, self.__dtm_min_v[1]+self.__delta_v[1]/2, self.__dtm_max_v[2]+100)
 
     # Set the rendering defaults
     def setupRender(self, resolution):
@@ -876,12 +815,14 @@ class DTMViewerRenderContext:
         # Add a material to the DTM object
         dtm_mesh.data.materials.append(mat)
 
-        # Center CameraTarget on DTM
+        #Store values for location computations
         x = tuple(map(lambda xyz: xyz[0], dtm_mesh.bound_box))
         y = tuple(map(lambda xyz: xyz[1], dtm_mesh.bound_box))
         z = tuple(map(lambda xyz: xyz[2], dtm_mesh.bound_box))
         self.__dtm_min_v = (min(x), min(y), min(z))
         self.__dtm_max_v = (max(x), max(y), max(z))
+        self.__delta_v = tuple(map(lambda a, b: a - b, self.__dtm_max_v, self.__dtm_min_v))
+
 
     #add stars in the sky to look space like
     def createStars(self):
@@ -984,5 +925,4 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
 
         print("Loading %s" % filepath)
 
-    print("Vector: ", newScene.getVector())
-    return newScene.getVector(), newScene.getMinVertex(), newScene.getMaxVertex()
+    return

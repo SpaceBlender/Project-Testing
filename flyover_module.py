@@ -1,28 +1,62 @@
 import bpy
 from bpy.props import *
 from mathutils import Vector
-
+import math
 
 class FlyoverDriver(object):
     #set some default properties for our flyover
-    def __init__(self, dem_vector, min_vertex, max_vertex, cycles=1, frames=72):
-        for camera in filter(lambda o: o.type == 'CAMERA', bpy.data.objects):
-            pass
-
-        #set the proper length
-        for scene in bpy.data.scenes:
-            scene.camera = camera
-            scene.frame_end = cycles*frames
-
-        for camera_target in filter(lambda o: o.name == "CameraTarget", bpy.data.objects):
-            pass
-
-        self.camera_target = camera_target
-        self.camera = camera #grab the active camera
+    def __init__(self, cycles=1, frames=72):
+        mesh = bpy.data.objects[0] #our DEM is the first object in the list
+        x = tuple(map(lambda xyz: xyz[0], mesh.bound_box))
+        y = tuple(map(lambda xyz: xyz[1], mesh.bound_box))
+        z = tuple(map(lambda xyz: xyz[2], mesh.bound_box))
+        self.min_v = (min(x), min(y), min(z))
+        self.max_v = (max(x), max(y), max(z))
+        self.vector = tuple(map(lambda a, b: a - b, self.max_v, self.min_v))
         self.total_frames = cycles*frames # save length
-        self.vector = dem_vector
-        self.min_vertex = min_vertex
-        self.max_vertex = max_vertex
+
+    # Adds the Empty target for the camera to track
+    def addEmptyTarget(self):
+        # Add an empty object called CameraTarget
+        bpy.ops.object.add(type='EMPTY')
+        for o in filter(lambda o: o.type == 'EMPTY', bpy.data.objects):
+            mt = o
+        mt.name = 'CameraTarget'
+        self.__CameraTarget = mt
+
+
+     # Setup a camera to track our empty target
+    def no_flyover(self):
+        delta_v = tuple(map(lambda a, b: a - b, self.max_v, self.min_v))
+        xy_distance = math.sqrt(self.vector[0] ** 2 + self.vector[1] ** 2)
+
+        # Create a new default camera
+        bpy.ops.object.camera_add()
+        camera = bpy.data.objects['Camera']
+
+        #Set cmera location and name
+        camera.location = (self.min_v[0], self.min_v[1], self.vector[2] + xy_distance*0.33)
+        camera.name = "Camera"
+        camera.data.clip_end = 500.0
+
+        #set scene camera
+        scene = bpy.data.scenes[0] #we only have one scene in this context
+        scene.camera = camera
+        scene.frame_end = 1
+
+        #create camera target point and place in the middle of our DEM
+        bpy.ops.object.add(type='EMPTY')
+        camera_target = bpy.context.object #select new object
+        camera_target.name = 'CameraTarget'
+        camera_target.location = (self.min_v[0]+delta_v[0]/2, self.min_v[1]+delta_v[1]/2, self.min_v[2]+delta_v[2]/2)
+
+        camera.select = True
+        bpy.ops.object.parent_set(type='FOLLOW')
+        track_constraint = camera.constraints.new('TRACK_TO')
+        track_constraint.target = camera_target
+        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
+        track_constraint.up_axis = 'UP_Y'
+
 
     #Creates a circular path around the whole dem the camera tracks the
     #center of the DEM
@@ -36,12 +70,20 @@ class FlyoverDriver(object):
         co = circle.data.splines[0].bezier_points[-1].co
         self.camera.location = co
 
+        self.camera.constraints.remove(self.camera.constraints["Track To"])
         self.camera.select = True
         bpy.ops.object.parent_set(type='FOLLOW')
         track_constraint = self.camera.constraints.new('TRACK_TO')
         track_constraint.target = self.camera_target
         track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
         track_constraint.up_axis = 'UP_Y'
+
+        path_constraint = self.camera.constraints.new('FOLLOW_PATH')
+        path_constraint.target = bpy.data.objects['BezierCircle']
+        path_constraint.forward_axis = 'FORWARD_Z'
+        path_constraint.up_axis = 'UP_Z'
+        path_constraint.use_curve_follow = True
+
         return
 
     def oval_pattern(self):
@@ -67,15 +109,6 @@ class FlyoverDriver(object):
 
         return
 
-    def hourglass_pattern(self):
-        return
-
-    #Liner Function itself. Calls helper functions in under Liner Helper Functions.
-    @staticmethod
-    def linear_pattern():
-        list_holder = FlyoverDriver.get_liner_path()
-        FlyoverDriver.make_path("Curve", "Liner", list_holder)
-        return
 
     def diamond_pattern(self):
         #build path
@@ -88,7 +121,7 @@ class FlyoverDriver(object):
         curve = bpy.data.curves.new(name='Curve', type='CURVE')
         curve.dimensions = '3D'
 
-        diamond = bpy.data.objects.new("DiamondPath", curve)
+        diamond = bpy.data.objects.new('DiamondPath', curve)
         diamond.location = Vector((0, 0, 5))
         bpy.context.scene.objects.link(diamond)
 
@@ -97,8 +130,9 @@ class FlyoverDriver(object):
         for num in range(len(coordinate_list)):
             x, y, z = coordinate_list[num]
             poly.points[num].co = (x, y, z, 1)
-        self.camera.location = p1
+            self.camera.location = Vector((x, y, z))
 
+        self.camera.constraints.remove(self.camera.constraints["Track To"])
         self.camera.select = True
         bpy.ops.object.parent_set(type='FOLLOW')
         track_constraint = self.camera.constraints.new('TRACK_TO')
@@ -106,6 +140,22 @@ class FlyoverDriver(object):
         track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
         track_constraint.up_axis = 'UP_Y'
 
+        path_constraint = self.camera.constraints.new('FOLLOW_PATH')
+        path_constraint.target = bpy.data.objects['DiamondPath']
+        path_constraint.forward_axis = 'FORWARD_Z'
+        path_constraint.up_axis = 'UP_Z'
+        path_constraint.use_curve_follow = True
+
+        return
+
+    def hourglass_pattern(self):
+        return
+
+    #Liner Function itself. Calls helper functions in under Liner Helper Functions.
+    @staticmethod
+    def linear_pattern(self):
+        list_holder = FlyoverDriver.get_liner_path()
+        FlyoverDriver.make_path("Curve", "Liner", list_holder)
         return
 
     #############################################################

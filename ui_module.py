@@ -42,7 +42,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ('NoFlyover', "No flyover", "Don't ceate a flyover"),
         ('AlgorithmicPattern', "Algorithmic Pattern", "Automatically create a 'pretty' flyover"),
         ('CirclePattern', "Circle Pattern", "Create a generic circular flyover"),
-        ('OvularPattern', "Ovular Pattern", "Create a generic ovular flyover"),
+        ('OvalPattern', "Oval Pattern", "Create a generic ovular flyover"),
         ('HourGlassPattern', "Hour Glass Pattern", "Create a generic X like flyover"),
         ('DiamondPattern', "Diamond Pattern", "Create a diagonal flyover"),
         ('LinearPattern', "Linear Pattern", "Create a linear flyover")),
@@ -119,39 +119,37 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
 
         ################################################################################
         ####################Execute DEM Importer and Blender Module#####################
-        dem_vector, dem_min_vertex, dem_max_vertex = blender_module.load(self, context,
-                                                                           filepath=self.filepath,
-                                                                           scale=self.scale,
-                                                                           bin_mode=self.bin_mode,
-                                                                           color_pattern=self.color_pattern,
-                                                                           flyover_pattern=self.flyover_pattern,
-                                                                           texture_location=texture_location,
-                                                                           cropVars=False,
-                                                                           resolution = self.resolution,
-                                                                           stars=self.stars,
-                                                                           mist=self.mist
-                                                                           )
+        blender_module.load(self, context,
+                            filepath=self.filepath,
+                            scale=self.scale,
+                            bin_mode=self.bin_mode,
+                            color_pattern=self.color_pattern,
+                            flyover_pattern=self.flyover_pattern,
+                            texture_location=texture_location,
+                            cropVars=False,
+                            resolution = self.resolution,
+                            stars=self.stars,
+                            mist=self.mist)
         ################################################################################
         ###############################Execute Flyovers#######################################
+        flyover = flyover_module.FlyoverDriver()
         if self.flyover_pattern == "NoFlyover":
             print("Skipping flyover")
-            pass
-        else:
-            flyover = flyover_module.FlyoverDriver(dem_vector, dem_min_vertex, dem_max_vertex)
-            if self.flyover_pattern == "CirclePattern":
-                print("Entering circular pattern")
-                flyover.circle_pattern()
-            elif self.flyover_pattern == "OvularPattern":
-                print("Entering oval pattern")
-                flyover.oval_pattern()
-            elif self.flyover_pattern == "HourGlassPattern":
-                print("Entering hour glass pattern")
-                flyover.hourglass_pattern()
-            elif self.flyover_pattern == "DiamondPattern":
-                print("Entering diamond pattern")
-                flyover.diamond_pattern()
-            elif self.flyover_pattern == "LinearPattern":
-                print("Entering linear pattern")
-                flyover.linear_pattern()
+            flyover.no_flyover()
+        elif self.flyover_pattern == "CirclePattern":
+            print("Entering circular pattern")
+            flyover.circle_pattern()
+        elif self.flyover_pattern == "OvalPattern":
+            print("Entering oval pattern")
+            flyover.oval_pattern()
+        elif self.flyover_pattern == "HourGlassPattern":
+            print("Entering hour glass pattern")
+            flyover.hourglass_pattern()
+        elif self.flyover_pattern == "DiamondPattern":
+            print("Entering diamond pattern")
+            flyover.diamond_pattern()
+        elif self.flyover_pattern == "LinearPattern":
+            print("Entering linear pattern")
+            flyover.linear_pattern()
 
         return {'FINISHED'}
