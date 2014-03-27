@@ -13,7 +13,7 @@ class FlyoverDriver(object):
         z = tuple(map(lambda xyz: xyz[2], mesh.bound_box))
         self.min_v = (min(x), min(y), min(z))
         self.max_v = (max(x), max(y), max(z))
-        self.vector = tuple(map(lambda a, b: a - b, self.max_v, self.min_v))
+        self.vector = tuple(map(lambda a, b: abs(a - b), self.min_v, self.max_v))
         self.center = (self.min_v[0]+self.vector[0]/2, self.min_v[1]+self.vector[1]/2, self.min_v[2]+self.vector[2]/2)
 
     #################################################################################################################
@@ -39,7 +39,22 @@ class FlyoverDriver(object):
         scene = bpy.data.scenes[0] #we only have one scene in this context
         scene.camera = camera
         scene.frame_end = frames
+
         return camera
+
+    def attach_camera(self, starting_point, curve, camera):
+        camera.location = starting_point
+
+        path_constraint = camera.constraints.new('FOLLOW_PATH')
+        path_constraint.target = curve
+        path_constraint.forward_axis = 'TRACK_NEGATIVE_Y'
+        path_constraint.up_axis = 'UP_Y'
+        path_constraint.use_curve_follow = True
+
+        #necessary for setting the camera to the path
+        camera.parent = curve
+        camera.select = True
+        bpy.ops.object.parent_set(type='FOLLOW')
 
     ##################################################################################################################
 
@@ -61,30 +76,23 @@ class FlyoverDriver(object):
     #Creates a circular path around the whole dem the camera tracks the
     #center of the DEM
     def circle_pattern(self):
-        # Add a circular path that dictates the camera path
-        bpy.ops.curve.primitive_bezier_circle_add()
-        circle = bpy.context.object
-        circle.location = (self.center[0], self.center[1], self.center[2]+5)
-        radius = min(self.vector[0], self.vector[1])/2
-        circle.scale = (radius, radius, 1.0)
-        co = circle.data.splines[0].bezier_points[-1].co
-
-        circle.select = True
-        camera = FlyoverDriver.add_camera(self, co)
+        camera = FlyoverDriver.add_camera(self, self.center)
         camera_target = FlyoverDriver.add_target(self, self.center)
 
-        camera.select = True
-        bpy.ops.object.parent_set(type='FOLLOW')
+        # Add a circular path that dictates the camera path
+        bpy.ops.curve.primitive_bezier_circle_add()
+        circle = bpy.data.objects['BezierCircle']
+        circle.location = (self.center[0], self.center[1], self.center[2]+5)
+        radius = min(self.vector[0], self.vector[1])/2
+        circle.scale = (radius, radius, 1.0) #scale circle
+
+        FlyoverDriver.attach_camera(self, (0,0,0), circle, camera)
+
         track_constraint = camera.constraints.new('TRACK_TO')
         track_constraint.target = camera_target
-        track_constraint.track_axis = 'TRACK_Z'
+        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
         track_constraint.up_axis = 'UP_Y'
-        #
-        # path_constraint = camera.constraints.new('FOLLOW_PATH')
-        # path_constraint.target = circle
-        # path_constraint.forward_axis = 'TRACK_NEGATIVE_Y'
-        # path_constraint.up_axis = 'UP_Z'
-        # path_constraint.use_curve_follow = True
+
         return
 
     def oval_pattern(self):
@@ -94,10 +102,8 @@ class FlyoverDriver(object):
         p4 = Vector(self.max_vertex[0], self.min_vertex[1] + self.vector[1]/2, self.max_vertex[2]+5)
 
         coordinate_list = [p1, p2, p3, p4, p5]
-
         curve = bpy.data.curves.new(name='Curve', type='CURVE')
         curve.dimensions = '3D'
-
         oval = bpy.data.objects.new("ObjCurve", curve)
         oval.location = (self.camera_target.location[0], self.camera_target.location[1], self.camera_target.location[2]+5)
         bpy.context.scene.objects.link(oval)
@@ -111,40 +117,37 @@ class FlyoverDriver(object):
         return
 
     def diamond_pattern(self):
+        camera = FlyoverDriver.add_camera(self, self.center)
+        camera_target = FlyoverDriver.add_target(self, self.center)
+
         #build path
-        p1 = Vector((self.min_vertex[0] + self.vector[0]/2, self.min_vertex[1]+2, self.max_vertex[2]+5))
-        p2 = Vector((self.min_vertex[0]+2, self.min_vertex[1] + self.vector[1]/2, self.max_vertex[2]+5))
-        p3 = Vector((self.min_vertex[0] + self.vector[0]/2, self.max_vertex[1]-2, self.max_vertex[2]+5))
-        p4 = Vector((self.max_vertex[0]-2, self.min_vertex[1] + self.vector[1]/2, self.max_vertex[2]+5))
+        p1 = (0, self.vector[1]/2, self.vector[2]+5)
+        p2 = (self.vector[0]/2, self.vector[1], self.vector[2]+5)
+        p3 = (self.vector[0], self.vector[1]/2, self.vector[2]+5)
+        p4 = (self.vector[0]/2, 0, self.vector[2]+5)
         coordinate_list = [p1, p2, p3, p4, p1]
 
-        curve = bpy.data.curves.new(name='Curve', type='CURVE')
-        curve.dimensions = '3D'
-
-        diamond = bpy.data.objects.new('DiamondPath', curve)
-        diamond.location = Vector((0, 0, 5))
+        diamond_data = bpy.data.curves.new(name='DiamondPath', type='CURVE')
+        diamond_data.dimensions = '3D'
+        diamond = bpy.data.objects.new(diamond_data.name, diamond_data)
+        #Starting point of our curve. The first point in our input list.
+        diamond.location = (self.min_v[0], self.min_v[1], self.max_v[2]+3)
         bpy.context.scene.objects.link(diamond)
+        #Type of curve, POLY, and the number of points to be added.
+        polyline = diamond_data.splines.new('POLY')
+        polyline.points.add(len(coordinate_list)-1)
+        #Need a holder for our origin.
+        for index in range(len(coordinate_list)):
+            x, y, z = coordinate_list[index]
+            polyline.points[index].co = (x, y, z, 1)
 
-        poly = curve.splines.new('POLY')
-        poly.points.add(len(coordinate_list)-1)
-        for num in range(len(coordinate_list)):
-            x, y, z = coordinate_list[num]
-            poly.points[num].co = (x, y, z, 1)
-            self.camera.location = Vector((x, y, z))
+        FlyoverDriver.attach_camera(self, (0,0,0), diamond, camera)
 
-        self.camera.constraints.remove(self.camera.constraints["Track To"])
-        self.camera.select = True
-        bpy.ops.object.parent_set(type='FOLLOW')
-        track_constraint = self.camera.constraints.new('TRACK_TO')
-        track_constraint.target = self.camera_target
+        camera.select = True
+        track_constraint = camera.constraints.new('TRACK_TO')
+        track_constraint.target = camera_target
         track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
         track_constraint.up_axis = 'UP_Y'
-
-        path_constraint = self.camera.constraints.new('FOLLOW_PATH')
-        path_constraint.target = bpy.data.objects['DiamondPath']
-        path_constraint.forward_axis = 'FORWARD_Z'
-        path_constraint.up_axis = 'UP_Z'
-        path_constraint.use_curve_follow = True
 
         return
 
@@ -186,6 +189,8 @@ class FlyoverDriver(object):
                 #As if our curve origin is (0, 0, 0).
                 x, y, z = points[index]
                 polyline.points[index].co = ((x - o_x), (y - o_y), z, 1)
+
+        return object_data
 
     #############################################################
     ###########Liner Helper Functions############################
