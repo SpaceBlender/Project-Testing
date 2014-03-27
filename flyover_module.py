@@ -6,7 +6,7 @@ import math
 
 class FlyoverDriver(object):
     #set some default properties for our flyover
-    def __init__(self, cycles=1, frames=72):
+    def __init__(self):
         mesh = bpy.data.objects[0] #our DEM is the first object in the list
         x = tuple(map(lambda xyz: xyz[0], mesh.bound_box))
         y = tuple(map(lambda xyz: xyz[1], mesh.bound_box))
@@ -14,42 +14,42 @@ class FlyoverDriver(object):
         self.min_v = (min(x), min(y), min(z))
         self.max_v = (max(x), max(y), max(z))
         self.vector = tuple(map(lambda a, b: a - b, self.max_v, self.min_v))
-        self.total_frames = cycles*frames # save length
+        self.center = (self.min_v[0]+self.vector[0]/2, self.min_v[1]+self.vector[1]/2, self.min_v[2]+self.vector[2]/2)
 
+    #################################################################################################################
+    ########################################## HELPER FUNCTIONS #####################################################
     # Adds the Empty target for the camera to track
-    def addEmptyTarget(self):
-        # Add an empty object called CameraTarget
-        bpy.ops.object.add(type='EMPTY')
-        for o in filter(lambda o: o.type == 'EMPTY', bpy.data.objects):
-            mt = o
-        mt.name = 'CameraTarget'
-        self.__CameraTarget = mt
-
-
-     # Setup a camera to track our empty target
-    def no_flyover(self):
-        delta_v = tuple(map(lambda a, b: a - b, self.max_v, self.min_v))
-        xy_distance = math.sqrt(self.vector[0] ** 2 + self.vector[1] ** 2)
-
-        # Create a new default camera
-        bpy.ops.object.camera_add()
-        camera = bpy.data.objects['Camera']
-
-        #Set cmera location and name
-        camera.location = (self.min_v[0], self.min_v[1], self.vector[2] + xy_distance*0.33)
-        camera.name = "Camera"
-        camera.data.clip_end = 500.0
-
-        #set scene camera
-        scene = bpy.data.scenes[0] #we only have one scene in this context
-        scene.camera = camera
-        scene.frame_end = 1
-
-        #create camera target point and place in the middle of our DEM
+    def add_target(self, location):
         bpy.ops.object.add(type='EMPTY')
         camera_target = bpy.context.object #select new object
         camera_target.name = 'CameraTarget'
-        camera_target.location = (self.min_v[0]+delta_v[0]/2, self.min_v[1]+delta_v[1]/2, self.min_v[2]+delta_v[2]/2)
+        camera_target.location = location
+        return camera_target
+
+    #Create a camera set to a specific location
+    def add_camera(self, location, frames=72):
+        # Create a new default camera
+        bpy.ops.object.camera_add()
+        camera = bpy.data.objects['Camera']
+        #Set camera location and name
+        camera.location = location
+        camera.name = "Camera"
+        camera.data.clip_end = 500.0
+        #set scene camera
+        scene = bpy.data.scenes[0] #we only have one scene in this context
+        scene.camera = camera
+        scene.frame_end = frames
+        return camera
+
+    ##################################################################################################################
+
+    # Setup a camera to track our empty target
+    def no_flyover(self):
+        xy_distance = math.sqrt(self.vector[0] ** 2 + self.vector[1] ** 2)
+        location = (self.min_v[0], self.min_v[1], self.center[2]+xy_distance*0.33)
+
+        camera = FlyoverDriver.add_camera(self, location)
+        camera_target = FlyoverDriver.add_target(self, self.center)
 
         camera.select = True
         bpy.ops.object.parent_set(type='FOLLOW')
@@ -58,33 +58,33 @@ class FlyoverDriver(object):
         track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
         track_constraint.up_axis = 'UP_Y'
 
-
     #Creates a circular path around the whole dem the camera tracks the
     #center of the DEM
     def circle_pattern(self):
         # Add a circular path that dictates the camera path
         bpy.ops.curve.primitive_bezier_circle_add()
         circle = bpy.context.object
-        circle.location = (self.camera_target.location[0], self.camera_target.location[1], self.camera_target.location[2]+5)
+        circle.location = (self.center[0], self.center[1], self.center[2]+5)
         radius = min(self.vector[0], self.vector[1])/2
         circle.scale = (radius, radius, 1.0)
         co = circle.data.splines[0].bezier_points[-1].co
-        self.camera.location = co
 
-        self.camera.constraints.remove(self.camera.constraints["Track To"])
-        self.camera.select = True
+        circle.select = True
+        camera = FlyoverDriver.add_camera(self, co)
+        camera_target = FlyoverDriver.add_target(self, self.center)
+
+        camera.select = True
         bpy.ops.object.parent_set(type='FOLLOW')
-        track_constraint = self.camera.constraints.new('TRACK_TO')
-        track_constraint.target = self.camera_target
-        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
+        track_constraint = camera.constraints.new('TRACK_TO')
+        track_constraint.target = camera_target
+        track_constraint.track_axis = 'TRACK_Z'
         track_constraint.up_axis = 'UP_Y'
-
-        path_constraint = self.camera.constraints.new('FOLLOW_PATH')
-        path_constraint.target = bpy.data.objects['BezierCircle']
-        path_constraint.forward_axis = 'FORWARD_Z'
-        path_constraint.up_axis = 'UP_Z'
-        path_constraint.use_curve_follow = True
-
+        #
+        # path_constraint = camera.constraints.new('FOLLOW_PATH')
+        # path_constraint.target = circle
+        # path_constraint.forward_axis = 'TRACK_NEGATIVE_Y'
+        # path_constraint.up_axis = 'UP_Z'
+        # path_constraint.use_curve_follow = True
         return
 
     def oval_pattern(self):
