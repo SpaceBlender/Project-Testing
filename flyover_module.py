@@ -52,10 +52,17 @@ class FlyoverDriver(object):
         path_constraint.use_curve_follow = True
 
         #necessary for setting the camera to the path
-        camera.parent = curve
+        bpy.ops.object.select_all(action="DESELECT")
         camera.select = True
+        curve.select = True
+        bpy.context.scene.objects.active = curve
         bpy.ops.object.parent_set(type='FOLLOW')
 
+    def set_target(self, camera, camera_target):
+        track_constraint = camera.constraints.new('TRACK_TO')
+        track_constraint.target = camera_target
+        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
+        track_constraint.up_axis = 'UP_Y'
     ##################################################################################################################
 
     # Setup a camera to track our empty target
@@ -67,11 +74,7 @@ class FlyoverDriver(object):
         camera_target = FlyoverDriver.add_target(self, self.center)
 
         camera.select = True
-        bpy.ops.object.parent_set(type='FOLLOW')
-        track_constraint = camera.constraints.new('TRACK_TO')
-        track_constraint.target = camera_target
-        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
-        track_constraint.up_axis = 'UP_Y'
+        FlyoverDriver.set_target(camera, camera_target)
 
     #Creates a circular path around the whole dem the camera tracks the
     #center of the DEM
@@ -85,35 +88,14 @@ class FlyoverDriver(object):
         circle.location = (self.center[0], self.center[1], self.center[2]+5)
         radius = min(self.vector[0], self.vector[1])/2
         circle.scale = (radius, radius, 1.0) #scale circle
+        co = tuple(map(lambda a, b: a - b, camera.location, (radius, 0, 0)))
 
-        FlyoverDriver.attach_camera(self, (0,0,0), circle, camera)
-
-        track_constraint = camera.constraints.new('TRACK_TO')
-        track_constraint.target = camera_target
-        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
-        track_constraint.up_axis = 'UP_Y'
+        FlyoverDriver.attach_camera(self, co, circle, camera)
+        FlyoverDriver.set_target(self, camera, camera_target)
 
         return
 
     def oval_pattern(self):
-        p1 = p5 = Vector(self.min_vertex[0] + self.vector[0]/2, self.min_vertex[1], self.max_vertex[2]+5)
-        p2 = Vector(self.min_vertex[0], self.min_vertex[1] + self.vector[1]/2, self.max_vertex[2]+5)
-        p3 = Vector(self.min_vertex[0] + self.vector[0]/2, self.max_vertex[1], self.max_vertex[2]+5)
-        p4 = Vector(self.max_vertex[0], self.min_vertex[1] + self.vector[1]/2, self.max_vertex[2]+5)
-
-        coordinate_list = [p1, p2, p3, p4, p5]
-        curve = bpy.data.curves.new(name='Curve', type='CURVE')
-        curve.dimensions = '3D'
-        oval = bpy.data.objects.new("ObjCurve", curve)
-        oval.location = (self.camera_target.location[0], self.camera_target.location[1], self.camera_target.location[2]+5)
-        bpy.context.scene.objects.link(oval)
-
-        poly = curve.splines.new('POLY')
-        poly.points.add(len(coordinate_list)-1)
-        for num in range(len(coordinate_list)):
-            x, y, z = coordinate_list[num]
-            poly.points[num].co = (x, y, z, 1)
-
         return
 
     def diamond_pattern(self):
@@ -127,28 +109,9 @@ class FlyoverDriver(object):
         p4 = (self.vector[0]/2, 0, self.vector[2]+5)
         coordinate_list = [p1, p2, p3, p4, p1]
 
-        diamond_data = bpy.data.curves.new(name='DiamondPath', type='CURVE')
-        diamond_data.dimensions = '3D'
-        diamond = bpy.data.objects.new(diamond_data.name, diamond_data)
-        #Starting point of our curve. The first point in our input list.
-        diamond.location = (self.min_v[0], self.min_v[1], self.max_v[2]+3)
-        bpy.context.scene.objects.link(diamond)
-        #Type of curve, POLY, and the number of points to be added.
-        polyline = diamond_data.splines.new('POLY')
-        polyline.points.add(len(coordinate_list)-1)
-        #Need a holder for our origin.
-        for index in range(len(coordinate_list)):
-            x, y, z = coordinate_list[index]
-            polyline.points[index].co = (x, y, z, 1)
-
-        FlyoverDriver.attach_camera(self, (0,0,0), diamond, camera)
-
-        camera.select = True
-        track_constraint = camera.constraints.new('TRACK_TO')
-        track_constraint.target = camera_target
-        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
-        track_constraint.up_axis = 'UP_Y'
-
+        diamond = FlyoverDriver.make_path("DiamondPath", "DiamondPath", coordinate_list)
+        FlyoverDriver.attach_camera(self, p4, diamond, camera)
+        FlyoverDriver.set_target(self, camera, camera_target)
         return
 
     def hourglass_pattern(self):
