@@ -43,7 +43,7 @@ class FlyoverDriver(object):
         camera.data.clip_end = 300
         return
 
-    #Liner Function itself. Calls helper functions under Liner Helper Functions and Camera helper functions.
+    #Liner function itself. Calls helper functions under Liner Helper Functions and Camera helper functions.
     #Creates a linear path over the mesh with a camera attached to the path.
     @staticmethod
     def linear_pattern():
@@ -83,8 +83,40 @@ class FlyoverDriver(object):
         camera.data.clip_end = 300
         return
 
+    #Diamond function itself. Calls some.
+    #Creates a diamond shape pattern to fly through the mesh.
+    @staticmethod
+    def diamond_pattern():
+        #Get the boundaries of the mesh.
+        boundaries_list = FlyoverDriver.get_dem_boundaries()
+        #Getting the midpoints of each side.
+        side_one_midpoint = FlyoverDriver.midpoint_two_points(boundaries_list[3], boundaries_list[1])
+        side_two_midpoint = FlyoverDriver.midpoint_two_points(boundaries_list[1], boundaries_list[2])
+        side_three_midpoint = FlyoverDriver.midpoint_two_points(boundaries_list[2], boundaries_list[0])
+        side_four_midpoint = FlyoverDriver.midpoint_two_points(boundaries_list[0], boundaries_list[3])
+        #Depending on the orientation of the mesh, we move into the image by 5 in x and 5 in y.
+        #Makes it so we don't run right to the edge every time.
+        if side_one_midpoint[1] - side_three_midpoint[1] < 0:
+            side_one_midpoint = (side_one_midpoint[0] + 5, side_one_midpoint[1] + 5, side_one_midpoint[2])
+            side_two_midpoint = (side_two_midpoint[0] + 5, side_two_midpoint[1] - 5, side_two_midpoint[2])
+            side_three_midpoint = (side_three_midpoint[0] - 5, side_three_midpoint[1] - 5, side_three_midpoint[2])
+            side_four_midpoint = (side_four_midpoint[0] - 5, side_four_midpoint[1] + 5, side_four_midpoint[2])
+        else:
+            side_one_midpoint = (side_one_midpoint[0] + 5, side_one_midpoint[1] - 5, side_one_midpoint[2])
+            side_two_midpoint = (side_two_midpoint[0] + 5, side_two_midpoint[1] + 5, side_two_midpoint[2])
+            side_three_midpoint = (side_three_midpoint[0] - 5, side_three_midpoint[1] + 5, side_three_midpoint[2])
+            side_four_midpoint = (side_four_midpoint[0] + 5, side_four_midpoint[1] + 5, side_four_midpoint[2])
+        #Setting up the list for our 4 point diamond shape.
+        point_list = [side_two_midpoint, side_three_midpoint, side_four_midpoint, side_one_midpoint, side_two_midpoint]
+        #Make it so our points are above the mesh.
+        point_list = FlyoverDriver.check_height(point_list)
+        #Create both the path and the camera.
+        FlyoverDriver.make_path("Curve", "Diamond", point_list)
+        FlyoverDriver.make_camera(side_two_midpoint)
+        return
+
     #############################################################
-    ###########Check Height Helper Function#######################
+    ###########Check Height Helper Function######################
     #############################################################
     #Function to take an input of points and make them exactly 2.5 units higher then the closest vertex in the mesh.
     @staticmethod
@@ -345,7 +377,7 @@ class FlyoverDriver(object):
         return_value = FlyoverDriver.midpoint_two_points(x_cross_mid_p, y_cross_mid_p)
         return return_value
 
-    #############################################################S
+    #############################################################
     ###########Liner Helper Function#############################
     #############################################################
     #Function to get a simple liner path for the overall DEM MESH.
