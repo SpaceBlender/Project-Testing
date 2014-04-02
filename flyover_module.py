@@ -13,7 +13,41 @@ class FlyoverDriver(object):
         #Can also be useful for other meshes to create flyovers.
         return
 
-    #Liner Function itself. Calls helper functions in under Liner Helper Functions.
+    #No flyover itself. Calls helper functions to create a focus in...
+    #...the middle of the mesh and a camera overlooking the mesh.
+    @staticmethod
+    def no_flyover():
+        #Gets the boundaries of the mesh.
+        boundaries_list = FlyoverDriver.get_dem_boundaries()
+        #Gets us the values midpoint of the mesh.
+        x_cross_mid_p = FlyoverDriver.midpoint_two_points(boundaries_list[0], boundaries_list[1])
+        y_cross_mid_p = FlyoverDriver.midpoint_two_points(boundaries_list[2], boundaries_list[3])
+        #Sets up our target in the midpoint of the mesh.
+        camera_target = FlyoverDriver.midpoint_two_points(x_cross_mid_p, y_cross_mid_p)
+        #Calculates the position of the camera.
+        camera_point_x = FlyoverDriver.distance_two_points(boundaries_list[1], boundaries_list[3])/2
+        camera_point_y = FlyoverDriver.distance_two_points(boundaries_list[0], boundaries_list[3])/2
+        camera_point_z = boundaries_list[4] + 20
+        #Final camera location.
+        camera_point = (boundaries_list[3][0] - camera_point_x, boundaries_list[3][1] - camera_point_y, camera_point_z)
+        #Create both the target and camera, with the camera looking at the target.
+        FlyoverDriver.make_camera_and_target(camera_point, camera_target)
+        #Selecting our camera.
+        camera = None
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                camera = item
+        #Simple error checking to ensure a camera is selected.
+        if camera is None:
+            print("Problem with selecting the camera in no_flyover.")
+            return
+        #Setting our FOV and Distance because we are looking at the mesh from far away.
+        camera.data.lens = 23
+        camera.data.clip_end = 300
+        return
+
+    #Liner Function itself. Calls helper functions under Liner Helper Functions and Camera helper functions.
+    #Creates a linear path over the mesh with a camera attached to the path.
     @staticmethod
     def linear_pattern():
         list_holder = FlyoverDriver.get_liner_path()
@@ -69,7 +103,7 @@ class FlyoverDriver(object):
     #############################################################
     #Function to create a camera with a target.
     @staticmethod
-    def make_camera(point, target_point):
+    def make_camera_and_target(point, target_point):
         #Creat both the camera and target.
         bpy.ops.object.camera_add(view_align=False, enter_editmode=False, location=point)
         bpy.ops.object.add(type='EMPTY')
@@ -83,6 +117,10 @@ class FlyoverDriver(object):
         for item in bpy.data.objects:
             if item.type == 'CAMERA':
                 camera = item
+        #Simple error checking to ensure a camera and target are selected.
+        if camera_target is None or camera is None:
+            print("Problem selecting camera and target in make_camera_and_target.")
+            return
         #Setting up the camera targets name and location.
         camera_target.name = 'CameraTarget'
         camera_target.location = target_point
@@ -90,7 +128,7 @@ class FlyoverDriver(object):
         camera.select = True
         track_constraint = camera.constraints.new('TRACK_TO')
         track_constraint.target = camera_target
-        track_constraint.track_axis = 'TRACK_Z'
+        track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
         track_constraint.up_axis = 'UP_Y'
         #Adds both the camera and target to the path.
         FlyoverDriver.attach_camera_to_path()
@@ -112,6 +150,10 @@ class FlyoverDriver(object):
         for item in bpy.data.objects:
             if item.type == 'CAMERA':
                 camera = item
+        #Simple error checking to ensure a camera and curve are selected.
+        if camera is None or camera_target is None:
+            print("Problem selecting a camera and curve in make_camera.")
+            return
         #Setting up the constraint on the camera.
         camera.select = True
         track_constraint = camera.constraints.new('TRACK_TO')
@@ -137,6 +179,10 @@ class FlyoverDriver(object):
         for item in bpy.data.objects:
             if item.type == 'CURVE':
                 curve = item
+        #Simple error checking to see if either camera or curve is still none.
+        if camera is None or curve is None:
+            print("No path or camera to attach to one another in attach_camera_to_path.")
+            return
         camera.select = True
         curve.select = True
         #Set the camera to follow the curve.
@@ -159,6 +205,10 @@ class FlyoverDriver(object):
         for item in bpy.data.objects:
             if item.type == 'CURVE':
                 curve = item
+        #Simple error checking to see if we have selected a target and curve.
+        if camera_target is None or curve is None:
+            print("No path or target to attach to one another in add_target_to_path.")
+            return
         camera_target.select = True
         curve.select = True
         #Set the target to follow the path.
