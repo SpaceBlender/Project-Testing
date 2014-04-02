@@ -19,11 +19,8 @@ class FlyoverDriver(object):
     def no_flyover():
         #Gets the boundaries of the mesh.
         boundaries_list = FlyoverDriver.get_dem_boundaries()
-        #Gets us the values midpoint of the mesh.
-        x_cross_mid_p = FlyoverDriver.midpoint_two_points(boundaries_list[0], boundaries_list[1])
-        y_cross_mid_p = FlyoverDriver.midpoint_two_points(boundaries_list[2], boundaries_list[3])
         #Sets up our target in the midpoint of the mesh.
-        camera_target = FlyoverDriver.midpoint_two_points(x_cross_mid_p, y_cross_mid_p)
+        camera_target = FlyoverDriver.get_center(boundaries_list)
         #Calculates the position of the camera.
         camera_point_x = FlyoverDriver.distance_two_points(boundaries_list[1], boundaries_list[3])/2
         camera_point_y = FlyoverDriver.distance_two_points(boundaries_list[0], boundaries_list[3])/2
@@ -54,6 +51,36 @@ class FlyoverDriver(object):
         list_holder = FlyoverDriver.check_height(list_holder)
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
         FlyoverDriver.make_camera(list_holder[0])
+        return
+
+    #Circle function itself. Calls general helper functions.
+    #Createas a circular flyover that looks at the entire mesh.
+    @staticmethod
+    def circle_pattern():
+        #Get the boundaries and midpoint of the mesh.
+        boundaries_list = FlyoverDriver.get_dem_boundaries()
+        midpoint_mesh = FlyoverDriver.get_center(boundaries_list)
+        #Create the circle around the mesh.
+        bpy.ops.curve.primitive_bezier_circle_add()
+        circle = bpy.data.objects['BezierCircle']
+        circle.location = (midpoint_mesh[0], midpoint_mesh[1], midpoint_mesh[2]+25)
+        radius = FlyoverDriver.distance_two_points(boundaries_list[0], boundaries_list[1]) + 15
+        circle.scale = (radius, radius, 1.0)
+        #Define where the camera will be placed. Should be right on the circle.
+        camera_point = (midpoint_mesh[0], midpoint_mesh[1] - radius, midpoint_mesh[2]+25)
+        #Creat the camera.
+        FlyoverDriver.make_camera_and_target(camera_point, midpoint_mesh)
+        #Select the camera for additional setting adjustments.
+        camera = None
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                camera = item
+        #Simple error checking to ensure a camera is selected.
+        if camera is None:
+            print("Problem with selecting the camera in circle_pattern")
+            return
+        #Change the distance we can see with the camera because we are looking from far out.
+        camera.data.clip_end = 300
         return
 
     #############################################################
@@ -308,6 +335,15 @@ class FlyoverDriver(object):
         return_list.append(y_min_point)
         return_list.append(z_max_value)
         return return_list
+
+    #Gets the center of the mesh.
+    @staticmethod
+    def get_center(input_list):
+        #Gets us the values midpoint of the mesh.
+        x_cross_mid_p = FlyoverDriver.midpoint_two_points(input_list[0], input_list[1])
+        y_cross_mid_p = FlyoverDriver.midpoint_two_points(input_list[2], input_list[3])
+        return_value = FlyoverDriver.midpoint_two_points(x_cross_mid_p, y_cross_mid_p)
+        return return_value
 
     #############################################################S
     ###########Liner Helper Function#############################
