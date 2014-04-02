@@ -19,11 +19,13 @@ class FlyoverDriver(object):
         list_holder = FlyoverDriver.get_liner_path()
         list_holder = FlyoverDriver.check_height(list_holder)
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
+        FlyoverDriver.make_camera(list_holder[0])
         return
 
     #############################################################
     ###########Check Height Helper Function#######################
     #############################################################
+    #Function to take an input of points and make them exactly 2.5 units higher then the closest vertex in the mesh.
     @staticmethod
     def check_height(input_list):
         #Prep list of vertices in which are the closest points in the mesh from our input..
@@ -63,6 +65,115 @@ class FlyoverDriver(object):
         return return_list
 
     #############################################################
+    ###########Camera Helper Function############################
+    #############################################################
+    #Function to create a camera with a target.
+    @staticmethod
+    def make_camera(point, target_point):
+        #Creat both the camera and target.
+        bpy.ops.object.camera_add(view_align=False, enter_editmode=False, location=point)
+        bpy.ops.object.add(type='EMPTY')
+        #Place the empty object variable as camera_target.
+        camera_target = None
+        for item in bpy.data.objects:
+            if item.type == 'EMPTY':
+                camera_target = item
+        #Place the camera object variable as camera
+        camera = None
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                camera = item
+        #Setting up the camera targets name and location.
+        camera_target.name = 'CameraTarget'
+        camera_target.location = target_point
+        #Setting up the constraint on the camera.
+        camera.select = True
+        track_constraint = camera.constraints.new('TRACK_TO')
+        track_constraint.target = camera_target
+        track_constraint.track_axis = 'TRACK_Z'
+        track_constraint.up_axis = 'UP_Y'
+        #Adds both the camera and target to the path.
+        FlyoverDriver.attach_camera_to_path()
+        FlyoverDriver.add_target_to_path()
+        return
+
+    #Creates a camera at a point and points it towards the curve.
+    @staticmethod
+    def make_camera(point):
+        #Creat both the camera and target.
+        bpy.ops.object.camera_add(view_align=False, enter_editmode=False, location=point)
+        #Place the empty object variable as camera_target.
+        camera_target = None
+        for item in bpy.data.objects:
+            if item.type == 'CURVE':
+                camera_target = item
+        #Place the camera object variable as camera
+        camera = None
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                camera = item
+        #Setting up the constraint on the camera.
+        camera.select = True
+        track_constraint = camera.constraints.new('TRACK_TO')
+        track_constraint.target = camera_target
+        track_constraint.track_axis = 'TRACK_Z'
+        track_constraint.up_axis = 'UP_Y'
+        #Adds the camera to the curve.
+        FlyoverDriver.attach_camera_to_path()
+        return
+
+    #Attach a camera to the curve.
+    @staticmethod
+    def attach_camera_to_path():
+        #Deselect all other objects.
+        FlyoverDriver.deselect_objects()
+        #Select camera.
+        camera = None
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                camera = item
+        #Select the curve.
+        curve = None
+        for item in bpy.data.objects:
+            if item.type == 'CURVE':
+                curve = item
+        camera.select = True
+        curve.select = True
+        #Set the camera to follow the curve.
+        bpy.context.scene.objects.active = curve
+        bpy.ops.object.parent_set(type='FOLLOW')
+        return
+
+    #Add a target to the path.
+    @staticmethod
+    def add_target_to_path():
+        #Deselect all other objects.
+        FlyoverDriver.deselect_objects()
+        #Select the target.
+        camera_target = None
+        for item in bpy.data.objects:
+            if item.type == 'EMPTY':
+                camera_target = item
+        #Select the curve.
+        curve = None
+        for item in bpy.data.objects:
+            if item.type == 'CURVE':
+                curve = item
+        camera_target.select = True
+        curve.select = True
+        #Set the target to follow the path.
+        bpy.ops.object.parent_set(type='FOLLOW')
+        return
+
+    #Deselection of objects.
+    @staticmethod
+    def deselect_objects():
+        #Look through all objects and make sure they are deselected.
+        for item in bpy.data.objects:
+            item.select = False
+        return
+
+    #############################################################
     ###########Make Path Helper Function#########################
     #############################################################
     #Creates a poly path out of N points.
@@ -94,7 +205,7 @@ class FlyoverDriver(object):
         return object_data
 
     #############################################################
-    ###########General Helper Functions###########################
+    ###########General Helper Functions##########################
     #############################################################
     #Helper function to get the distance between two functions.
     @staticmethod
@@ -148,8 +259,8 @@ class FlyoverDriver(object):
         return_list.append(z_max_value)
         return return_list
 
-    #############################################################
-    ###########Liner Helper Functions############################
+    #############################################################S
+    ###########Liner Helper Function#############################
     #############################################################
     #Function to get a simple liner path for the overall DEM MESH.
     #Gets the path by calculating the midpoints in the DEM image and...
