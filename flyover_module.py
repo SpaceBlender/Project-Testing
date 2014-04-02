@@ -121,9 +121,52 @@ class FlyoverDriver(object):
     @staticmethod
     def linear_pattern():
         list_holder = FlyoverDriver.get_liner_path()
-        #list_holder = check_height()
+        print(list_holder)
+        list_holder = FlyoverDriver.check_height(list_holder)
+        print(list_holder)
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
         return
+
+    #############################################################
+    ###########Check Height Helper Function#######################
+    #############################################################
+    @staticmethod
+    def check_height(input_list):
+        #Prep list of vertices in which are the closest points in the mesh from our input..
+        prep_list = []
+        #Set the same number of vertices as our input list.
+        for item in input_list:
+            prep_list.append((item[0], item[1], item[2]))
+        #Holder list to check the overall distance of a vertex in the mesh from the input lists vertex.
+        holder_list = []
+        #Setting up our holder list to start comparing distances to the appropriate index.
+        for item in input_list:
+            holder_list.append(100)
+        #Run through each object to find the MESH.
+        for item in bpy.data.objects:
+            if item.type == 'MESH':
+                #Run through each vertex to get our data.
+                for vertex in item.data.vertices:
+                    #Check each vertex in our input list against each vertex in the mesh.
+                    for input_index, input_vertex in enumerate(input_list):
+                        #New point to input into our distance calculation.
+                        vertex_point = (vertex.co.x, vertex.co.y, vertex.co.z)
+                        #Calculating the distance between our input list point and the mesh vertex point.
+                        #Optimize later if able to.
+                        distance = FlyoverDriver.distance_two_points(input_vertex, vertex_point)
+                        #Compare our distance and the holders value.
+                        if distance < holder_list[input_index]:
+                            #If the new distance is closer then we can update our temp variables.
+                            holder_list[input_index] = distance
+                            prep_list[input_index] = (vertex.co.x, vertex.co.y, vertex.co.z)
+        #Setting up our return list.
+        return_list = []
+        #Get the values from our prep list and place them into our final return list.
+        for item in prep_list:
+            #Here is where we get the increase in the z access for every point.
+            point = (item[0], item[1], item[2] + 1.5)
+            return_list.append(point)
+        return return_list
 
     #############################################################
     ###########Make Path Helper Function#########################
@@ -152,7 +195,7 @@ class FlyoverDriver(object):
                 #we need to change the following points relative to our curve origin.
                 #As if our curve origin is (0, 0, 0).
                 x, y, z = points[index]
-                polyline.points[index].co = ((x - o_x), (y - o_y), z, 1)
+                polyline.points[index].co = ((x - o_x), (y - o_y), (z - o_z), 1)
 
         return object_data
 
@@ -162,7 +205,9 @@ class FlyoverDriver(object):
     #Helper function to get the distance between two functions.
     @staticmethod
     def distance_two_points(point_one, point_two):
-        distance = math.sqrt((point_one[0] - point_two[0])*(point_one[0] - point_two[0]) + (point_one[1] - point_two[1])*(point_one[1] - point_two[1]) + (point_one[2] - point_two[2])*(point_one[2] - point_two[2]))
+        distance = math.sqrt((point_one[0] - point_two[0])*(point_one[0] - point_two[0]) +
+                             (point_one[1] - point_two[1])*(point_one[1] - point_two[1]) +
+                             (point_one[2] - point_two[2])*(point_one[2] - point_two[2]))
         return distance
 
     #Helper function to find the midpoint between two points.
@@ -206,9 +251,6 @@ class FlyoverDriver(object):
         midpoint_holder = []
         #Our return list of the values to be returned from this function.
         return_list = []
-        #Getting a new height value to be used for the path.
-        #May change to a parameter later to be dynamic.
-        z_max_value += 0.5
         #If statement to see which way is longer.
         #Helps us find out which way the path will run.
         if FlyoverDriver.distance_two_points(x_min_point, y_max_point) > FlyoverDriver.distance_two_points(x_min_point, y_min_point):
