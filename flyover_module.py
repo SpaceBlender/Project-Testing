@@ -121,9 +121,7 @@ class FlyoverDriver(object):
     @staticmethod
     def linear_pattern():
         list_holder = FlyoverDriver.get_liner_path()
-        print(list_holder)
         list_holder = FlyoverDriver.check_height(list_holder)
-        print(list_holder)
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
         return
 
@@ -164,7 +162,7 @@ class FlyoverDriver(object):
         #Get the values from our prep list and place them into our final return list.
         for item in prep_list:
             #Here is where we get the increase in the z access for every point.
-            point = (item[0], item[1], item[2] + 1.5)
+            point = (item[0], item[1], item[2] + 2.5)
             return_list.append(point)
         return return_list
 
@@ -200,7 +198,7 @@ class FlyoverDriver(object):
         return object_data
 
     #############################################################
-    ###########Liner Helper Functions############################
+    ###########General Helper Functions###########################
     #############################################################
     #Helper function to get the distance between two functions.
     @staticmethod
@@ -215,10 +213,9 @@ class FlyoverDriver(object):
     def midpoint_two_points(point_one, point_two):
         return (point_one[0]+point_two[0])/2, (point_one[1]+point_two[1])/2, (point_one[2]+point_two[2])/2
 
-    #Function to get a simple liner path for the overall DEM MESH.
-    #Gets the path by calculating the midpoints in the DEM image and makes the path run through the long ways of the DEM.
+    #Helper function to get the boundaries of the DEM.
     @staticmethod
-    def get_liner_path():
+    def get_dem_boundaries():
         #Simple value holders for getting our corners and highest point in the DEM.
         #Farthest NW corner of the DEM.
         x_max_point = (0, 0, 0)
@@ -230,6 +227,8 @@ class FlyoverDriver(object):
         y_min_point = (0, 100, 0)
         #Max height value of the DEM.
         z_max_value = -10
+        #Return List
+        return_list = []
         #Run through each object to find the MESH.
         for item in bpy.data.objects:
             if item.type == 'MESH':
@@ -246,6 +245,28 @@ class FlyoverDriver(object):
                         y_min_point = (vertex.co.x, vertex.co.y, vertex.co.z)
                     if vertex.co.z > z_max_value:
                         z_max_value = vertex.co.z
+        return_list.append(x_max_point)
+        return_list.append(x_min_point)
+        return_list.append(y_max_point)
+        return_list.append(y_min_point)
+        return_list.append(z_max_value)
+        return return_list
+
+    #############################################################
+    ###########Liner Helper Functions############################
+    #############################################################
+    #Function to get a simple liner path for the overall DEM MESH.
+    #Gets the path by calculating the midpoints in the DEM image and makes the path run through the long ways of the DEM.
+    @staticmethod
+    def get_liner_path():
+        boundaries_list = FlyoverDriver.get_dem_boundaries()
+        x_max_point = boundaries_list[0]
+        #Farthest SE corner of the DEM.
+        x_min_point = boundaries_list[1]
+        #Farthest NE corner of the DEM.
+        y_max_point = boundaries_list[2]
+        #Farthest SW corner of the DEM.
+        y_min_point = boundaries_list[3]
         #List holders for work to be done.
         #Holds the midpoints we are going to work with.
         midpoint_holder = []
@@ -261,7 +282,7 @@ class FlyoverDriver(object):
             midpoint_holder.append(FlyoverDriver.midpoint_two_points(x_max_point, y_min_point))
         #Loop to give us our new points to be returned.
         for point in midpoint_holder:
-            new_point = (point[0], point[1], z_max_value)
+            new_point = (point[0], point[1], point[2])
             return_list.append(new_point)
         #Final return of get liner path function.
         return return_list
