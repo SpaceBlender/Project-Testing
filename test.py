@@ -8,27 +8,27 @@ import bpy
 def make_camera(point, target_point):
     #Creat both the camera and target.
     bpy.ops.object.camera_add(view_align=False, enter_editmode=False, location=point)
-    bpy.ops.object.add(type='EMPTY')
+    ##bpy.ops.object.add(type='EMPTY')
     #Place the empty object variable as camera_target.
     for item in bpy.data.objects:
-        if item.type == 'EMPTY':
+        if item.type == 'CURVE':
             camera_target = item
     #Place the camera object variable as camera
     for item in bpy.data.objects:
         if item.type == 'CAMERA':
             camera = item
     #Setting up the camera targets name and location.
-    camera_target.name = 'CameraTarget'
-    camera_target.location = target_point
+    ##camera_target.name = 'CameraTarget'
+    ##camera_target.location = target_point
     #Setting up the constraint on the camera.
     camera.select = True
     track_constraint = camera.constraints.new('TRACK_TO')
     track_constraint.target = camera_target
-    track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
+    track_constraint.track_axis = 'TRACK_Z'
     track_constraint.up_axis = 'UP_Y'
 
     attach_camera_to_path()
-    add_target_to_path()
+    #add_target_to_path()
     return
 
 
