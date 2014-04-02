@@ -158,6 +158,7 @@ class FlyoverDriver(object):
     @staticmethod
     def linear_pattern():
         list_holder = FlyoverDriver.get_liner_path()
+        #list_holder = check_height()
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
         return
 
