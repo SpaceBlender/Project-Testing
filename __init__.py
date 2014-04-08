@@ -33,7 +33,7 @@ bl_info = {
     "name": "Import and SpaceBlend DEM (.IMG)",
     "author": "Andrew Carter, Eric Ghazal, Jason Hedlund, Terence Luther",
     "version": (1, 0, 0),
-    "blender": (2, 69, 0),
+    "blender": (2, 65, 0),
     "warning": "Requires GDAL and System Python 2.7+ to be installed.",
     "location": "File > Import > Import and SpaceBlend DEM (.IMG)",
     "description": "Import DEM, apply texture, and create flyover.",
