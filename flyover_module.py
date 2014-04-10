@@ -43,22 +43,61 @@ class FlyoverDriver(object):
         camera.data.clip_end = 300
         return
 
+    #############################################################
+    ###########Wraper Functions for Flyovers#####################
+    #############################################################
+    #In order to set up the amount of frames and type of output for our flyovers..
+    #..we have to make a wrapper function for each flyover. This is because..
+    #..the main flyover functions need to finalize and then have the set environment run.
+
+    #Liner pattern wrapper function.
+    @staticmethod
+    def linear_pattern():
+        FlyoverDriver.linear_pattern_main()
+        FlyoverDriver.set_environment()
+        return
+
+    #Circle pattern wrapper function.
+    @staticmethod
+    def circle_pattern():
+        FlyoverDriver.circle_pattern_main()
+        FlyoverDriver.set_environment()
+        return
+
+    #Diamon pattern wrapper function.
+    @staticmethod
+    def diamond_pattern():
+        FlyoverDriver.diamond_pattern_main()
+        FlyoverDriver.set_environment()
+        return
+
+    #############################################################
+    ###########Main Flyover Functions############################
+    #############################################################
     #Liner function itself. Calls helper functions under Liner Helper Functions and Camera helper functions.
     #Creates a linear path over the mesh with a camera attached to the path.
     @staticmethod
-    def linear_pattern():
+    def linear_pattern_main():
         list_holder = FlyoverDriver.get_liner_path()
         list_holder = FlyoverDriver.check_height(list_holder)
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
         FlyoverDriver.make_camera(list_holder[0])
+        #Select the camera for additional setting adjustments.
+        camera = None
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                camera = item
+        #Simple error checking to ensure a camera is selected.
+        if camera is None:
+            print("Problem with selecting the camera in no_flyover.")
+            return
         camera.data.clip_end = 300
-        FlyoverDriver.set_environment()
         return
 
     #Circle function itself. Calls general helper functions.
     #Createas a circular flyover that looks at the entire mesh.
     @staticmethod
-    def circle_pattern():
+    def circle_pattern_main():
         #Get the boundaries and midpoint of the mesh.
         boundaries_list = FlyoverDriver.get_dem_boundaries()
         midpoint_mesh = FlyoverDriver.get_center(boundaries_list)
@@ -83,13 +122,12 @@ class FlyoverDriver(object):
             return
         #Change the distance we can see with the camera because we are looking from far out.
         camera.data.clip_end = 300
-        FlyoverDriver.set_environment()
         return
 
     #Diamond function itself. Calls some.
     #Creates a diamond shape pattern to fly through the mesh.
     @staticmethod
-    def diamond_pattern():
+    def diamond_pattern_main():
         #Get the boundaries of the mesh.
         boundaries_list = FlyoverDriver.get_dem_boundaries()
         #Getting the midpoints of each side.
@@ -116,7 +154,15 @@ class FlyoverDriver(object):
         #Create both the path and the camera.
         FlyoverDriver.make_path("Curve", "Diamond", point_list)
         FlyoverDriver.make_camera(side_two_midpoint)
-        FlyoverDriver.set_environment()
+        #Select the camera for additional setting adjustments.
+        camera = None
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                camera = item
+        #Simple error checking to ensure a camera is selected.
+        if camera is None:
+            print("Problem with selecting the camera in circle_pattern")
+            return
         camera.data.clip_end = 300
         return
 
