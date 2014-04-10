@@ -381,7 +381,9 @@ class FlyoverDriver(object):
             print("Curve not found in set environment.")
             return
         curve.data.path_duration = 1440
-        bpy.data.scenes["Scene"].render.image_settings.file_format = 'AVI_JPEG'
+        #Change the output to H264 with an MPEG-4 codec.
+        bpy.data.scenes["Scene"].render.image_settings.file_format = 'H264'
+        bpy.context.scene.render.ffmpeg.codec = 'MPEG4'
         return
 
     #Helper function to get the distance between two functions.
