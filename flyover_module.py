@@ -89,7 +89,7 @@ class FlyoverDriver(object):
                 camera = item
         #Simple error checking to ensure a camera is selected.
         if camera is None:
-            print("Problem with selecting the camera in no_flyover.")
+            print("Problem with selecting the camera in linea pattern main.")
             return
         camera.data.clip_end = 300
         return
@@ -118,7 +118,7 @@ class FlyoverDriver(object):
                 camera = item
         #Simple error checking to ensure a camera is selected.
         if camera is None:
-            print("Problem with selecting the camera in circle_pattern")
+            print("Problem with selecting the camera in circle pattern main.")
             return
         #Change the distance we can see with the camera because we are looking from far out.
         camera.data.clip_end = 300
@@ -161,7 +161,7 @@ class FlyoverDriver(object):
                 camera = item
         #Simple error checking to ensure a camera is selected.
         if camera is None:
-            print("Problem with selecting the camera in circle_pattern")
+            print("Problem with selecting the camera in diamond pattern main.")
             return
         camera.data.clip_end = 300
         return
@@ -371,8 +371,18 @@ class FlyoverDriver(object):
     @staticmethod
     def set_environment():
         bpy.data.scenes["Scene"].frame_end = 1440
-        bpy.data.objects["Curve"].dupli_frames_end = 1440
+        #Select the curve.
+        curve = None
+        for item in bpy.data.objects:
+            if item.type == 'CURVE':
+                curve = item
+        #Simple error checking to see if either camera or curve is still none.
+        if curve is None:
+            print("Curve not found in set environment.")
+            return
+        curve.data.path_duration = 1440
         bpy.data.scenes["Scene"].render.image_settings.file_format = 'AVI_JPEG'
+        return
 
     #Helper function to get the distance between two functions.
     @staticmethod
