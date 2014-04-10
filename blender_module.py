@@ -16,6 +16,11 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# This module is based off Tim Spriggs Blender HiRise DTM importer. In Blender his plug-in is Import DTM from (.IMG)
+# To import a DEM into Blender we use his code for importing the image into a mesh in Blender. We have omitted parts
+# of his script that we are not using and have modified it to meet our needs. His original script can be found on
+# GitHub at https://github.com/imoverclocked/io_mesh_img/blob/master/plugin/import_img.py
+# Thanks Tim for your help on this project and for keeping your code OpenSource.
 
 from struct import pack, unpack
 from sys import platform as _platform
