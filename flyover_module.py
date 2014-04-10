@@ -51,6 +51,8 @@ class FlyoverDriver(object):
         list_holder = FlyoverDriver.check_height(list_holder)
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
         FlyoverDriver.make_camera(list_holder[0])
+        camera.data.clip_end = 300
+        FlyoverDriver.set_environment()
         return
 
     #Circle function itself. Calls general helper functions.
@@ -81,6 +83,7 @@ class FlyoverDriver(object):
             return
         #Change the distance we can see with the camera because we are looking from far out.
         camera.data.clip_end = 300
+        FlyoverDriver.set_environment()
         return
 
     #Diamond function itself. Calls some.
@@ -113,6 +116,8 @@ class FlyoverDriver(object):
         #Create both the path and the camera.
         FlyoverDriver.make_path("Curve", "Diamond", point_list)
         FlyoverDriver.make_camera(side_two_midpoint)
+        FlyoverDriver.set_environment()
+        camera.data.clip_end = 300
         return
 
     #############################################################
@@ -316,6 +321,13 @@ class FlyoverDriver(object):
     #############################################################
     ###########General Helper Functions##########################
     #############################################################
+    #Helper function to set up the environment; frame lengths, path frames, video output.
+    @staticmethod
+    def set_environment():
+        bpy.data.scenes["Scene"].frame_end = 1440
+        bpy.data.objects["Curve"].dupli_frames_end = 1440
+        bpy.data.scenes["Scene"].render.image_settings.file_format = 'AVI_JPEG'
+
     #Helper function to get the distance between two functions.
     @staticmethod
     def distance_two_points(point_one, point_two):
