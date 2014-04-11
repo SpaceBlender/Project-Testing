@@ -62,14 +62,15 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         )
 
     #Render Resolution Lower the resolution the faster the render
-    resolution = IntProperty(name="Render Resolution %",
-                              description="Change image resolution",
-                              min=10,
-                              max=100,
-                              soft_min=10,
-                              soft_max=100,
-                              default=100,
-                              step=5)
+    #Listed all popular 16:9 Formats and then a low resolution setting for testing
+    resolution = EnumProperty(items=(
+        ('1080p', '1080p', '1920×1080p Resolution'),
+        ('720p', '720p', '1280×720p Resolution'),
+        ('480p', '480p', '854x480p Resolution'),
+        ('360p', '360p', '640x360p Resolution'),
+        ('180p', '180p', '320x180p Low Res good for testing')),
+        name='Resolution', description='Render Resolution', default='1080p')
+
     #Scaling Control
     scale = FloatProperty(name="Scale",
                           description="Scale the IMG",
@@ -78,6 +79,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
                           soft_min=0.001,
                           soft_max=100.0,
                           default=0.01)
+
     bin_mode = EnumProperty(items=(
         ('NONE', "None", "Don't bin the image"),
         ('BIN2', "2x2", "use 2x2 binning to import the mesh"),
@@ -116,7 +118,8 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
 
             print('\nSaving texture at: ' + texture_location)
             gdal.gdal_clean_up(hill_shade, color_relief)
-
+            print("BBBB", self.color_pattern)
+            print("AGAAAA", self.flyover_pattern)
         ################################################################################
         ####################Execute DEM Importer and Blender Module#####################
         blender_module.load(self, context,

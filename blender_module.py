@@ -764,18 +764,30 @@ class DTMViewerRenderContext:
         sun.location = (self.__dtm_min_v[0]+self.__delta_v[0]/2, self.__dtm_min_v[1]+self.__delta_v[1]/2, self.__dtm_max_v[2]+100)
 
     # Set the rendering defaults
+    # Set up render in all popular 16:9 Formats and then a low resolution setting for testing
     def setupRender(self, resolution):
         render = bpy.context.scene.render
         # Don't bother raytracing since we will likely put a real image on the
         # mesh that already contains shadows
         render.use_raytrace = False
+        #default resolution is 1080p
+        render.resolution_x = 1920
+        render.resolution_y = 1080
 
-        #Adjust the resolution by the percentage chosen by the user
-        percentage = resolution/100
+        if resolution == '720p':
+            render.resolution_x = 1280
+            render.resolution_y = 720
+        if resolution == '480p':
+            render.resolution_x = 854
+            render.resolution_y = 480
+        if resolution == '360p':
+            render.resolution_x = 640
+            render.resolution_y = 360
+        if resolution == '180p':
+            render.resolution_x = 320
+            render.resolution_y = 180
 
-        render.resolution_x = 1920*percentage
-        render.resolution_y = 1080*percentage
-        render.resolution_percentage = 100*percentage
+        render.resolution_percentage = 100
 
     # Add the DTM to the scene
     def addDTM(self):
