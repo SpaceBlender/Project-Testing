@@ -859,12 +859,6 @@ class DTMViewerRenderContext:
 
     #Create mist over the dem surface
     def createMist(self, map_file=None):
-        # if map != None:
-        #     file = open(map_file)
-        #     lines = file.readlines()
-        #     midcolor = lines[2]
-        #     highcolor = ""
-
         print("Creating mistic mist...")
         #set general colors for background and mist
         world = bpy.context.scene.world

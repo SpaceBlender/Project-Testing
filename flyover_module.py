@@ -2,7 +2,6 @@ import bpy
 import math
 from bpy.props import *
 import os
-from mathutils import Vector
 
 
 class FlyoverDriver(object):

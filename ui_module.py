@@ -4,6 +4,8 @@ from bpy_extras.io_utils import ImportHelper
 from . import blender_module
 from . import gdal_module
 from . import flyover_module
+from . import test_blender
+import unittest
 import os
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
@@ -154,5 +156,11 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         elif self.flyover_pattern == "LinearPattern":
             print("Entering linear pattern")
             flyover.linear_pattern()
+
+
+        #####################################################################################
+        ###############################    UNIT TESTS #######################################
+        suite = unittest.TestLoader().loadTestsFromModule(test_blender)
+        unittest.TextTestRunner(verbosity=4).run(suite)
 
         return {'FINISHED'}
