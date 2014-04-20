@@ -1,11 +1,10 @@
 __author__ = 'Andrew'
-
 from . import blender_module
 import bpy
 import unittest
 import bpy.props
 
-class TestBlender(unittest.TestCase):
+class TestBlenderDTMViewerRenderContext(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -38,13 +37,11 @@ class TestBlender(unittest.TestCase):
         self.assertEqual(world.use_sky_real, True)
         self.assertEqual(world.star_settings.use_stars, True)
 
-        TestBlender.cleanup(self)
+        TestBlenderDTMViewerRenderContext.cleanup(self)
 
     # def test_mist(self):
-    #     world = bpy.context.scene.world
-    #     self.__dtm_min_v = (0.0, 0.0, 0.0)
-    #     self.__dtm_max_v = (0.0, 0.0, 0.0)
     #     render = blender_module.DTMViewerRenderContext(self, 'C:\\Users\\Andrew\\Desktop\\DEMs\\DTEED_020492_1830_021481_1830_A01.IMG','1080p', False, True)
+    #     world = bpy.context.scene.world
     #     mist = bpy.context.scene.world.mist_settings
     #
     #     #Before mist is created
@@ -106,3 +103,29 @@ class TestBlender(unittest.TestCase):
         world.star_settings.color_random = 0.0
         world.star_settings.average_separation = 15.0
 
+
+# class TestBlenderLoad(unittest.TestCase):
+#     #Test that the file is saving under normal operations
+#     #Verify that a file saving directory is generated as expected
+#     def test_saving(self):
+#         pass
+#
+#     #In this case, It wasn't to make sure that if the saving operation fails
+#     #That the DEM image is in fact loaded
+#     def test_saving_fail(self):
+#         pass
+#
+#     #Test to insure the loading logic
+#     #Approach
+#     #1.) Clear scene
+#     #2.) Force image to load with expected data
+#     #3.) Test to see if there is a mesh in the scene
+#     #4.) Clear scene
+#     def test_dtm_loading(self):
+#         pass
+#
+#     def test_dtm_loading_with_null_image(self):
+#         pass
+#
+#     def find_image(self):
+#         pass
