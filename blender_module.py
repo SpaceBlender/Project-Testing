@@ -741,6 +741,8 @@ class DTMViewerRenderContext:
         self.__resolution = dtm_resolution
         self.__stars = dtm_stars
         self.__mist = dtm_mist
+        self.__dtm_max_v = (0.0, 0.0, 0.0)
+        self.__dtm_min_v = (0,0, 0.0, 0.0)
 
     def createDefaultContext(self):
         ''' clears the current scene and fills it with a DTM '''
@@ -886,7 +888,7 @@ class DTMViewerRenderContext:
         bpy.ops.wm.save_as_mainfile(filepath=path, check_existing=False)
 
 
-
+#DEM loader
 def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pattern,
          texture_location, cropVars, resolution, stars, mist):
     print("Bin Mode: %s" % bin_mode)
@@ -910,10 +912,14 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
         dtm_resolution=resolution,
         dtm_texture=texture_location,
         dtm_stars=stars,
-        dtm_mist=mist
-        )
-    print('Processing image in Blender, please be patient...')
-    newScene.createDefaultContext()
+        dtm_mist=mist)
+
+    try:
+        print('Processing image in Blender, please be patient...')
+        newScene.createDefaultContext()
+    except:
+        print("Unable to load the DEM.")
+        return False
 
     if mist == True:
         newScene.createMist()
@@ -925,15 +931,14 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
         print("Saved image at: ", save_path)
         print("  DTM_IMG:", filepath)
         print("  DTM_TEXTURE:", texture_location)
+        return True
     except:
         print("Not saving blend file...")
         importer = hirise_dtm_importer(context, filepath)
         importer.bin_mode(bin_mode)
         importer.scale(scale)
         if cropVars:
-            importer.crop(cropVars[0], cropVars[1], cropVars[2], cropVars[3] )
+            importer.crop(cropVars[0], cropVars[1], cropVars[2], cropVars[3])
         importer.execute()
-
         print("Loading %s" % filepath)
-
-    return
+        return True

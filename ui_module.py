@@ -128,7 +128,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
                             flyover_pattern=self.flyover_pattern,
                             texture_location=texture_location,
                             cropVars=False,
-                            resolution = self.resolution,
+                            resolution=self.resolution,
                             stars=self.stars,
                             mist=self.mist)
         ################################################################################
