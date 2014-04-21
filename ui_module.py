@@ -42,14 +42,10 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
     #Flyover Pattern Control
     flyover_pattern = EnumProperty(items=(
         ('NoFlyover', "No flyover", "Don't ceate a flyover"),
-        ('AlgorithmicPattern', "Algorithmic Pattern", "Automatically create a 'pretty' flyover"),
         ('CirclePattern', "Circle Pattern", "Create a generic circular flyover"),
-        ('OvalPattern', "Oval Pattern", "Create a generic ovular flyover"),
-        ('HourGlassPattern', "Hour Glass Pattern", "Create a generic X like flyover"),
         ('DiamondPattern', "Diamond Pattern", "Create a diagonal flyover"),
         ('LinearPattern', "Linear Pattern", "Create a linear flyover")),
         name="Flyover", description="Import Flyover", default='NoFlyover')
-
 
     #Option to add stars to the background of the image
     stars = BoolProperty(name="Apply Stars",
