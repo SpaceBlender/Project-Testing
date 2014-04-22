@@ -4,9 +4,12 @@ from bpy_extras.io_utils import ImportHelper
 from . import blender_module
 from . import gdal_module
 from . import flyover_module
-from . import test_blender
-import unittest
 import os
+
+#Testing imports -- comment this out in production version
+import unittest
+from . import test_blender
+from . import test_gdal
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
     bl_idname = "import_dem.img"
@@ -88,6 +91,14 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         name="Binning", description="Import Binning", default='BIN12-FAST')
 
     def execute(self, context):
+        #####################################################################################
+        ###############################    UNIT TESTS    ####################################
+        blender_unit_tests = unittest.TestLoader().loadTestsFromModule(test_blender)
+        gdal_unit_tests = unittest.TestLoader().loadTestsFromModule(test_gdal)
+        unittest.TextTestRunner(descriptions=True, verbosity=3).run(blender_unit_tests)
+        unittest.TextTestRunner(descriptions=True, verbosity=3).run(gdal_unit_tests)
+
+        #####################################################################################
         input_DEM = self.filepath
         if input_DEM != bpy.path.ensure_ext(input_DEM, ".IMG"):
             return {'CANCELLED'}
@@ -152,11 +163,5 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         elif self.flyover_pattern == "LinearPattern":
             print("Entering linear pattern")
             flyover.linear_pattern()
-
-
-        #####################################################################################
-        ###############################    UNIT TESTS #######################################
-        suite = unittest.TestLoader().loadTestsFromModule(test_blender)
-        unittest.TextTestRunner(verbosity=4).run(suite)
 
         return {'FINISHED'}
