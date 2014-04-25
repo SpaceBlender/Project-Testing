@@ -10,6 +10,7 @@ import os
 import unittest
 from . import test_blender
 from . import test_gdal
+from . import test_flyover
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
     bl_idname = "import_dem.img"
@@ -95,8 +96,10 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         ###############################    UNIT TESTS    ####################################
         blender_unit_tests = unittest.TestLoader().loadTestsFromModule(test_blender)
         gdal_unit_tests = unittest.TestLoader().loadTestsFromModule(test_gdal)
-        unittest.TextTestRunner(descriptions=True, verbosity=3).run(blender_unit_tests)
-        unittest.TextTestRunner(descriptions=True, verbosity=3).run(gdal_unit_tests)
+        flyover_unit_tests = unittest.TestLoader().loadTestsFromModule(test_flyover)
+        # unittest.TextTestRunner(descriptions=True, verbosity=3).run(blender_unit_tests)
+        # unittest.TextTestRunner(descriptions=True, verbosity=3).run(gdal_unit_tests)
+        unittest.TextTestRunner(descriptions=True, verbosity=3).run(flyover_unit_tests)
 
         #####################################################################################
         input_DEM = self.filepath
