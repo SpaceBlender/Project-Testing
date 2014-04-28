@@ -1,12 +1,17 @@
 __author__ = "Andrew"
 
 from . import flyover_module
+from . import blender_module
 import unittest
 import os
 import math
 
+#The DEM you want to use for blender unit tests
+dem = 'C:\\Users\\Andrew\\Desktop\\DEMs\\DTEED_020492_1830_021481_1830_A01.IMG'
+
 class TestFlyoverPatterns(unittest.TestCase):
     def test_no_flyover(self):
+
         pass
 
     def test_linnear_pattern(self):
@@ -99,6 +104,138 @@ class TestMiscellaneousFunctions(unittest.TestCase):
         self.assertAlmostEqual(val[1], 0.0)
         self.assertAlmostEqual(val[2], 0.5)
 
-    def get_dem_boundaries(self):
-        pass
+    #This one seemed really odd to me, i got lost analyzing what data was being passed in...
+    #Not really sure why the midpoint of midpoints ends up being the actual midpoint...
+    #The image might be skewed...
+    def test_get_center_general_usage(self):
+        flyover = flyover_module.FlyoverDriver()
 
+        x_cross_mid = (100.0-0.0)/2
+        y_cross_mid = (100.0-0.0)/2
+
+        val = flyover.get_center(((100.0,0.0,0.0),(0.0,0.0,0.0),(0.0,100.0,0.0),(0.0,0.0,0.0)))
+        self.assertAlmostEqual(x_cross_mid/2, val[0]) #x pos
+        self.assertAlmostEqual(y_cross_mid/2, val[1]) #y pos
+
+    #Warning: these values had to be hard coded
+    #If you don't have this DEM then you may spend a lot of time getting this test to work correctly.
+    def test_get_dem_boundaries_normal_dem(self):
+        #Load in a DTM (we need some type of mesh!)
+        blender_module.DTMViewerRenderContext.clearScene(self)
+        blender_module.load(self, None,
+             filepath=dem,
+             scale=0.01,
+             bin_mode='BIN12-FAST',
+             color_pattern='None',
+             flyover_pattern='No flyover',
+             texture_location=None,
+             cropVars=False,
+             resolution='1080p',
+             stars=False,
+             mist=False)
+
+        #Fetch the dem_boundaries
+        flyover = flyover_module.FlyoverDriver()
+        vals = flyover.get_dem_boundaries()
+        x_max = vals[0]
+        #check x y z positions
+        self.assertAlmostEqual(x_max[0], 32.0400009)
+        self.assertAlmostEqual(x_max[1], -51.9000015)
+        self.assertAlmostEqual(x_max[2], 5.97231769)
+
+        x_min = vals[1]
+        self.assertAlmostEqual(x_min[0], 0.0)
+        self.assertAlmostEqual(x_min[1], -3.18000006)
+        self.assertAlmostEqual(x_min[2], 1.376258969)
+
+        y_max = vals[2]
+        self.assertAlmostEqual(y_max[0], 25.92000007)
+        self.assertAlmostEqual(y_max[1], 0.0)
+        self.assertAlmostEqual(y_max[2], 6.119607925)
+
+        y_min = vals[3]
+        self.assertAlmostEqual(y_min[0], 6.42000007)
+        self.assertAlmostEqual(y_min[1], -55.13999938)
+        self.assertAlmostEqual(y_min[2], 6.86862039)
+
+        blender_module.DTMViewerRenderContext.clearScene(self)
+
+    #Small Scale
+    def test_get_dem_boundaries_small_resolution(self):
+       #Load in a DTM (we need some type of mesh!)
+        blender_module.DTMViewerRenderContext.clearScene(self)
+        blender_module.load(self, None,
+             filepath=dem,
+             scale=0.000001,
+             bin_mode='BIN12-FAST',
+             color_pattern='None',
+             flyover_pattern='No flyover',
+             texture_location=None,
+             cropVars=False,
+             resolution='180p',
+             stars=False,
+             mist=False)
+
+        #Fetch the dem_boundaries
+        flyover = flyover_module.FlyoverDriver()
+        vals = flyover.get_dem_boundaries()
+        x_max = vals[0]
+        #check x y z positions
+        self.assertAlmostEqual(x_max[0], 32.0400009)
+        self.assertAlmostEqual(x_max[1], -51.9000015)
+        self.assertAlmostEqual(x_max[2], 5.97231769)
+
+        x_min = vals[1]
+        self.assertAlmostEqual(x_min[0], 0.0)
+        self.assertAlmostEqual(x_min[1], -3.18000006)
+        self.assertAlmostEqual(x_min[2], 1.376258969)
+
+        y_max = vals[2]
+        self.assertAlmostEqual(y_max[0], 25.92000007)
+        self.assertAlmostEqual(y_max[1], 0.0)
+        self.assertAlmostEqual(y_max[2], 6.119607925)
+
+        y_min = vals[3]
+        self.assertAlmostEqual(y_min[0], 6.42000007)
+        self.assertAlmostEqual(y_min[1], -55.13999938)
+        self.assertAlmostEqual(y_min[2], 6.86862039)
+
+    #Massive scale
+    def test_get_dem_boundaries_big_resolution(self):
+       #Load in a DTM (we need some type of mesh!)
+        blender_module.DTMViewerRenderContext.clearScene(self)
+        blender_module.load(self, None,
+             filepath=dem,
+             scale=1.0,
+             bin_mode='BIN12-FAST',
+             color_pattern='None',
+             flyover_pattern='No flyover',
+             texture_location=None,
+             cropVars=False,
+             resolution='1080p',
+             stars=False,
+             mist=False)
+
+        #Fetch the dem_boundaries
+        flyover = flyover_module.FlyoverDriver()
+        vals = flyover.get_dem_boundaries()
+        x_max = vals[0]
+        #check x y z positions
+        self.assertAlmostEqual(x_max[0], 32.0400009)
+        self.assertAlmostEqual(x_max[1], -51.9000015)
+        self.assertAlmostEqual(x_max[2], 5.97231769)
+
+        x_min = vals[1]
+        self.assertAlmostEqual(x_min[0], 0.0)
+        self.assertAlmostEqual(x_min[1], -3.18000006)
+        self.assertAlmostEqual(x_min[2], 1.376258969)
+
+        y_max = vals[2]
+        self.assertAlmostEqual(y_max[0], 25.92000007)
+        self.assertAlmostEqual(y_max[1], 0.0)
+        self.assertAlmostEqual(y_max[2], 6.119607925)
+
+        y_min = vals[3]
+        self.assertAlmostEqual(y_min[0], 6.42000007)
+        self.assertAlmostEqual(y_min[1], -55.13999938)
+        self.assertAlmostEqual(y_min[2], 6.86862039)
