@@ -94,11 +94,12 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         #####################################################################################
         ###############################    UNIT TESTS    ####################################
+        #####################################################################################
         blender_unit_tests = unittest.TestLoader().loadTestsFromModule(test_blender)
         gdal_unit_tests = unittest.TestLoader().loadTestsFromModule(test_gdal)
         flyover_unit_tests = unittest.TestLoader().loadTestsFromModule(test_flyover)
-        # unittest.TextTestRunner(descriptions=True, verbosity=3).run(blender_unit_tests)
-        # unittest.TextTestRunner(descriptions=True, verbosity=3).run(gdal_unit_tests)
+        unittest.TextTestRunner(descriptions=True, verbosity=3).run(blender_unit_tests)
+        unittest.TextTestRunner(descriptions=True, verbosity=3).run(gdal_unit_tests)
         unittest.TextTestRunner(descriptions=True, verbosity=3).run(flyover_unit_tests)
 
         #####################################################################################
