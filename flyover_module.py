@@ -37,11 +37,11 @@ class FlyoverDriver(object):
         #Simple error checking to ensure a camera is selected.
         if camera is None:
             print("Problem with selecting the camera in no_flyover.")
-            return
+            return False
         #Setting our FOV and Distance because we are looking at the mesh from far away.
         camera.data.lens = 23
         camera.data.clip_end = 300
-        return
+        return True
 
     #############################################################
     ###########Wraper Functions for Flyovers#####################
@@ -53,23 +53,23 @@ class FlyoverDriver(object):
     #Liner pattern wrapper function.
     @staticmethod
     def linear_pattern():
-        FlyoverDriver.linear_pattern_main()
+        bool = FlyoverDriver.linear_pattern_main()
         FlyoverDriver.set_environment()
-        return
+        return bool
 
     #Circle pattern wrapper function.
     @staticmethod
     def circle_pattern():
-        FlyoverDriver.circle_pattern_main()
+        bool = FlyoverDriver.circle_pattern_main()
         FlyoverDriver.set_environment()
-        return
+        return bool
 
     #Diamon pattern wrapper function.
     @staticmethod
     def diamond_pattern():
-        FlyoverDriver.diamond_pattern_main()
+        bool = FlyoverDriver.diamond_pattern_main()
         FlyoverDriver.set_environment()
-        return
+        return bool
 
     #############################################################
     ###########Main Flyover Functions############################
@@ -90,9 +90,9 @@ class FlyoverDriver(object):
         #Simple error checking to ensure a camera is selected.
         if camera is None:
             print("Problem with selecting the camera in linea pattern main.")
-            return
+            return False
         camera.data.clip_end = 300
-        return
+        return True
 
     #Circle function itself. Calls general helper functions.
     #Createas a circular flyover that looks at the entire mesh.
@@ -119,10 +119,10 @@ class FlyoverDriver(object):
         #Simple error checking to ensure a camera is selected.
         if camera is None:
             print("Problem with selecting the camera in circle pattern main.")
-            return
+            return False
         #Change the distance we can see with the camera because we are looking from far out.
         camera.data.clip_end = 300
-        return
+        return True
 
     #Diamond function itself. Calls some.
     #Creates a diamond shape pattern to fly through the mesh.
@@ -162,9 +162,9 @@ class FlyoverDriver(object):
         #Simple error checking to ensure a camera is selected.
         if camera is None:
             print("Problem with selecting the camera in diamond pattern main.")
-            return
+            return False
         camera.data.clip_end = 300
-        return
+        return True
 
     #############################################################
     ###########Check Height Helper Function######################
@@ -379,14 +379,14 @@ class FlyoverDriver(object):
         #Simple error checking to see if either camera or curve is still none.
         if curve is None:
             print("Curve not found in set environment.")
-            return
+            return False
         curve.data.path_duration = 1440
         #Change the output to MPEG video with an MPEG-4 codec.
         bpy.data.scenes["Scene"].render.image_settings.file_format = 'FFMPEG'
         bpy.context.scene.render.ffmpeg.format = 'MPEG4'
         #Set the video to output to the current working directory
         bpy.data.scenes["Scene"].render.filepath = os.getcwd()+'/'
-        return
+        return True
 
     #Helper function to get the distance between two functions.
     @staticmethod

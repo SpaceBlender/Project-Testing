@@ -3,25 +3,52 @@ __author__ = "Andrew"
 from . import flyover_module
 from . import blender_module
 import unittest
-import os
 import math
+import bpy
 
 #The DEM you want to use for blender unit tests
 dem = 'C:\\Users\\Andrew\\Desktop\\DEMs\\DTEED_020492_1830_021481_1830_A01.IMG'
 
 class TestFlyoverPatterns(unittest.TestCase):
     def test_no_flyover(self):
-
-        pass
+        #Verify normal pass through
+        flyover = flyover_module.FlyoverDriver()
+        bool = flyover.no_flyover()
+        self.assertTrue(bool)
+        TestFlyoverPatterns.cleanup_flyover(self)
 
     def test_linnear_pattern(self):
-        pass
+        flyover = flyover_module.FlyoverDriver()
+        bool = flyover.linear_pattern()
+        self.assertTrue(bool)
+        TestFlyoverPatterns.cleanup_flyover(self)
 
     def test_diamond_pattern(self):
-        pass
+        flyover = flyover_module.FlyoverDriver()
+        bool = flyover.diamond_pattern()
+        self.assertTrue(bool)
+        TestFlyoverPatterns.cleanup_flyover(self)
 
     def test_circle_pattern(self):
-        pass
+        flyover = flyover_module.FlyoverDriver()
+        bool = flyover.circle_pattern()
+        self.assertTrue(bool)
+        TestFlyoverPatterns.cleanup_flyover(self)
+
+    #Wasn't needed in the normal flyover but i provdided this here since there will be multiple flyovers constructed
+    def cleanup_flyover(self):
+        #Delete the Camera, CameraTarget, and the Path
+        for item in bpy.data.objects:
+            if item.type == 'CAMERA':
+                item.select = True
+                bpy.ops.object.delete()
+            if item.type == 'EMPTY':
+                item.select = True
+                bpy.ops.object.delete()
+            if item.type == 'CURVE':
+                item.select = True
+                bpy.ops.object.delete()
+
 
 class TestMiscellaneousFunctions(unittest.TestCase):
     def test_distance_two_points_x_test(self):
