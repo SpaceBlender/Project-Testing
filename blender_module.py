@@ -735,14 +735,16 @@ class DTMViewerRenderContext:
     #   1 Lamp (Sun)
     #   1 Camera
     #   1 Empty (CameraTarget)
-    def __init__(self, dtm_img, dtm_resolution, dtm_stars, dtm_mist, dtm_texture=None):
+    def __init__(self, dtm_img, dtm_resolution, dtm_stars, dtm_mist, bin_mode, scale, dtm_texture=None):
         self.__img = dtm_img
         self.__texture = dtm_texture
         self.__resolution = dtm_resolution
         self.__stars = dtm_stars
         self.__mist = dtm_mist
+        self.__bin_mode = bin_mode
         self.__dtm_max_v = (0.0, 0.0, 0.0)
         self.__dtm_min_v = (0,0, 0.0, 0.0)
+        self.__scale = scale
 
     def createDefaultContext(self):
         ''' clears the current scene and fills it with a DTM '''
@@ -794,8 +796,8 @@ class DTMViewerRenderContext:
     # Add the DTM to the scene
     def addDTM(self):
         helper = hirise_dtm_importer(self.__img)
-        helper.bin_mode('BIN6')
-        helper.scale(0.01)
+        helper.bin_mode(self.__bin_mode)
+        helper.scale(self.__scale)
         dtm_mesh = helper.execute()
 
         bpy.ops.object.select_pattern(pattern=dtm_mesh.name)
@@ -912,7 +914,9 @@ def load(operator, context, filepath, scale, bin_mode, color_pattern, flyover_pa
         dtm_resolution=resolution,
         dtm_texture=texture_location,
         dtm_stars=stars,
-        dtm_mist=mist)
+        dtm_mist=mist,
+        bin_mode=bin_mode,
+        scale=scale)
 
     try:
         print('Processing image in Blender, please be patient...')
