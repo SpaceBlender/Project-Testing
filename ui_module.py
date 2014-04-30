@@ -7,10 +7,11 @@ from . import flyover_module
 import os
 
 #Testing imports -- comment this out in production version
-import unittest
-from . import test_blender
-from . import test_gdal
-from . import test_flyover
+# import unittest
+# from . import test_blender
+# from . import test_gdal
+# from . import test_flyover
+# import sys
 
 class UI_Driver(bpy.types.Operator, ImportHelper):
     bl_idname = "import_dem.img"
@@ -95,12 +96,14 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         #####################################################################################
         ###############################    UNIT TESTS    ####################################
         #####################################################################################
-        blender_unit_tests = unittest.TestLoader().loadTestsFromModule(test_blender)
-        gdal_unit_tests = unittest.TestLoader().loadTestsFromModule(test_gdal)
-        flyover_unit_tests = unittest.TestLoader().loadTestsFromModule(test_flyover)
-        unittest.TextTestRunner(descriptions=True, verbosity=3).run(blender_unit_tests)
-        unittest.TextTestRunner(descriptions=True, verbosity=3).run(gdal_unit_tests)
-        unittest.TextTestRunner(descriptions=True, verbosity=3).run(flyover_unit_tests)
+        #Uncomment to run, warning may only be compatible in Windows
+        # sys.stdout = open('C:\\Users\\Andrew\\Desktop\\unittest_output.txt', 'w')
+        # blender_unit_tests = unittest.TestLoader().loadTestsFromModule(test_blender)
+        # gdal_unit_tests = unittest.TestLoader().loadTestsFromModule(test_gdal)
+        # flyover_unit_tests = unittest.TestLoader().loadTestsFromModule(test_flyover)
+        # unittest.TextTestRunner(descriptions=True, verbosity=3).run(blender_unit_tests)
+        # unittest.TextTestRunner(descriptions=True, verbosity=3).run(gdal_unit_tests)
+        # unittest.TextTestRunner(descriptions=True, verbosity=3).run(flyover_unit_tests)
 
         #####################################################################################
         input_DEM = self.filepath
@@ -155,12 +158,6 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
         elif self.flyover_pattern == "CirclePattern":
             print("Entering circular pattern")
             flyover.circle_pattern()
-        elif self.flyover_pattern == "OvalPattern":
-            print("Entering oval pattern")
-            flyover.oval_pattern()
-        elif self.flyover_pattern == "HourGlassPattern":
-            print("Entering hour glass pattern")
-            flyover.hourglass_pattern()
         elif self.flyover_pattern == "DiamondPattern":
             print("Entering diamond pattern")
             flyover.diamond_pattern()
