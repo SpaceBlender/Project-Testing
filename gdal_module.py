@@ -39,38 +39,43 @@ class GDALDriver(object):
                                 outstr = outstr.replace(char, '')
                             #Warning what you are about to see may make the CS man in you cry
                             #This hack is not for the feignt of hear
+                            if char in "123456789":
+                                outstr = outstr.replace(char, '')
+
+                            #Warning what you are about to see may make the CS man in you cry
+                            #This hack is not for the feignt of hear
                             if char == '.':
                                 count += 1
                                 lock = False
                             if count == 3 and not lock:
-                                outstr += '10'
+                                outstr += '1'
                                 lock = True
                             elif count == 6 and not lock:
-                                outstr += '20'
+                                outstr += '2'
                                 lock = True
                             elif count == 9 and not lock:
-                                outstr += '30'
+                                outstr += '3'
                                 lock = True
                             elif count == 12 and not lock:
-                                outstr += '40'
+                                outstr += '4'
                                 lock = True
                             elif count == 15 and not lock:
-                                outstr += '50'
+                                outstr += '5'
                                 lock = True
                             elif count == 18 and not lock:
-                                outstr += '60'
+                                outstr += '6'
                                 lock = True
                             elif count == 21 and not lock:
-                                outstr += '70'
+                                outstr += '7'
                                 lock = True
                             elif count == 24 and not lock:
-                                outstr += '80'
+                                outstr += '8'
                                 lock = True
                             elif count == 27 and not lock:
-                                outstr += '90'
+                                outstr += '9'
                                 lock = True
                             elif count == 30 and not lock:
-                                outstr += '100'
+                                outstr += '1'
                                 lock = True
                         sys.stdout.write(outstr)
                         sys.stdout.flush()
@@ -124,9 +129,11 @@ class GDALDriver(object):
                         for char in outstr:
                             if char in " b'":
                                 outstr = outstr.replace(char, '')
-                            if char.isalpha() or char.isdigit():
+                            if char.isalpha():
                                 outstr = outstr.replace(char, '')
                             if char in "_\-~()[]*=:":
+                                outstr = outstr.replace(char, '')
+                            if char in "123456789":
                                 outstr = outstr.replace(char, '')
 
                             #Warning what you are about to see may make the CS man in you cry
@@ -135,34 +142,34 @@ class GDALDriver(object):
                                 count += 1
                                 lock = False
                             if count == 3 and not lock:
-                                outstr += '10'
+                                outstr += '1'
                                 lock = True
                             elif count == 6 and not lock:
-                                outstr += '20'
+                                outstr += '2'
                                 lock = True
                             elif count == 9 and not lock:
-                                outstr += '30'
+                                outstr += '3'
                                 lock = True
                             elif count == 12 and not lock:
-                                outstr += '40'
+                                outstr += '4'
                                 lock = True
                             elif count == 15 and not lock:
-                                outstr += '50'
+                                outstr += '5'
                                 lock = True
                             elif count == 18 and not lock:
-                                outstr += '60'
+                                outstr += '6'
                                 lock = True
                             elif count == 21 and not lock:
-                                outstr += '70'
+                                outstr += '7'
                                 lock = True
                             elif count == 24 and not lock:
-                                outstr += '80'
+                                outstr += '8'
                                 lock = True
                             elif count == 27 and not lock:
-                                outstr += '90'
+                                outstr += '9'
                                 lock = True
                             elif count == 30 and not lock:
-                                outstr += '100'
+                                outstr += '1'
                                 lock = True
                         sys.stdout.write(outstr)
                         sys.stdout.flush()
@@ -225,38 +232,43 @@ class GDALDriver(object):
                             #Warning what you are about to see may make the CS man in you cry
                             #This hack is not for the feignt of hear
                             #Warning what you are about to see may make the CS man in you cry
+                            if char in "123456789":
+                                outstr = outstr.replace(char, '')
+
+                            #Warning what you are about to see may make the CS man in you cry
+                            #This hack is not for the feignt of hear
                             if char == '.':
                                 count += 1
                                 lock = False
                             if count == 3 and not lock:
-                                outstr += '10'
+                                outstr += '1'
                                 lock = True
                             elif count == 6 and not lock:
-                                outstr += '20'
+                                outstr += '2'
                                 lock = True
                             elif count == 9 and not lock:
-                                outstr += '30'
+                                outstr += '3'
                                 lock = True
                             elif count == 12 and not lock:
-                                outstr += '40'
+                                outstr += '4'
                                 lock = True
                             elif count == 15 and not lock:
-                                outstr += '50'
+                                outstr += '5'
                                 lock = True
                             elif count == 18 and not lock:
-                                outstr += '60'
+                                outstr += '6'
                                 lock = True
                             elif count == 21 and not lock:
-                                outstr += '70'
+                                outstr += '7'
                                 lock = True
                             elif count == 24 and not lock:
-                                outstr += '80'
+                                outstr += '8'
                                 lock = True
                             elif count == 27 and not lock:
-                                outstr += '90'
+                                outstr += '9'
                                 lock = True
                             elif count == 30 and not lock:
-                                outstr += '100'
+                                outstr += '1'
                                 lock = True
 
                         sys.stdout.write(outstr)

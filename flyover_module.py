@@ -6,17 +6,17 @@ import os
 
 class FlyoverDriver(object):
     #Class constructor.
-    def __init__(self):
+    def __init__(self, scale):
         #Changed this module to be modular.
         #Meaning we can call all the functions here without having to worry about class initialization.
         #Can be useful for users who don't want to run the entire plug-in again to get different fly paths.
         #Can also be useful for other meshes to create flyovers.
+        self.scale = scale
         return
 
     #No flyover itself. Calls helper functions to create a focus in...
     #...the middle of the mesh and a camera overlooking the mesh.
-    @staticmethod
-    def no_flyover():
+    def no_flyover(self):
         #Gets the boundaries of the mesh.
         boundaries_list = FlyoverDriver.get_dem_boundaries()
         #Sets up our target in the midpoint of the mesh.
@@ -24,10 +24,10 @@ class FlyoverDriver(object):
         #Calculates the position of the camera.
         camera_point_x = FlyoverDriver.distance_two_points(boundaries_list[1], boundaries_list[3])/2
         camera_point_y = FlyoverDriver.distance_two_points(boundaries_list[0], boundaries_list[3])/2
-        camera_point_z = boundaries_list[4] + 20
+        camera_point_z = boundaries_list[4] + 2000 * self.scale
         #Final camera location.
         camera_point = (boundaries_list[3][0] - camera_point_x, boundaries_list[3][1] - camera_point_y, camera_point_z)
-        #Create both the target and camera, with the camera looking at the target.
+        #Create both the target and camera, wit1h the camera looking at the target.
         FlyoverDriver.make_camera_and_target(camera_point, camera_target)
         #Selecting our camera.
         camera = None
@@ -40,7 +40,7 @@ class FlyoverDriver(object):
             return False
         #Setting our FOV and Distance because we are looking at the mesh from far away.
         camera.data.lens = 23
-        camera.data.clip_end = 300
+        camera.data.clip_end = 300000 * self.scale
         return True
 
     #############################################################
@@ -51,23 +51,20 @@ class FlyoverDriver(object):
     #..the main flyover functions need to finalize and then have the set environment run.
 
     #Liner pattern wrapper function.
-    @staticmethod
-    def linear_pattern():
-        bool = FlyoverDriver.linear_pattern_main()
+    def linear_pattern(self):
+        bool = FlyoverDriver.linear_pattern_main(self)
         FlyoverDriver.set_environment()
         return bool
 
     #Circle pattern wrapper function.
-    @staticmethod
-    def circle_pattern():
-        bool = FlyoverDriver.circle_pattern_main()
+    def circle_pattern(self):
+        bool = FlyoverDriver.circle_pattern_main(self)
         FlyoverDriver.set_environment()
         return bool
 
     #Diamon pattern wrapper function.
-    @staticmethod
-    def diamond_pattern():
-        bool = FlyoverDriver.diamond_pattern_main()
+    def diamond_pattern(self):
+        bool = FlyoverDriver.diamond_pattern_main(self)
         FlyoverDriver.set_environment()
         return bool
 
@@ -76,8 +73,7 @@ class FlyoverDriver(object):
     #############################################################
     #Liner function itself. Calls helper functions under Liner Helper Functions and Camera helper functions.
     #Creates a linear path over the mesh with a camera attached to the path.
-    @staticmethod
-    def linear_pattern_main():
+    def linear_pattern_main(self):
         list_holder = FlyoverDriver.get_liner_path()
         list_holder = FlyoverDriver.check_height(list_holder)
         FlyoverDriver.make_path("Curve", "Linear", list_holder)
@@ -91,13 +87,12 @@ class FlyoverDriver(object):
         if camera is None:
             print("Problem with selecting the camera in linea pattern main.")
             return False
-        camera.data.clip_end = 300
+        camera.data.clip_end = 300000 * self.scale
         return True
 
     #Circle function itself. Calls general helper functions.
     #Createas a circular flyover that looks at the entire mesh.
-    @staticmethod
-    def circle_pattern_main():
+    def circle_pattern_main(self):
         #Get the boundaries and midpoint of the mesh.
         boundaries_list = FlyoverDriver.get_dem_boundaries()
         midpoint_mesh = FlyoverDriver.get_center(boundaries_list)
@@ -121,13 +116,12 @@ class FlyoverDriver(object):
             print("Problem with selecting the camera in circle pattern main.")
             return False
         #Change the distance we can see with the camera because we are looking from far out.
-        camera.data.clip_end = 300
+        camera.data.clip_end = 300000 * self.scale
         return True
 
     #Diamond function itself. Calls some.
     #Creates a diamond shape pattern to fly through the mesh.
-    @staticmethod
-    def diamond_pattern_main():
+    def diamond_pattern_main(self):
         #Get the boundaries of the mesh.
         boundaries_list = FlyoverDriver.get_dem_boundaries()
         #Getting the midpoints of each side.
@@ -163,7 +157,7 @@ class FlyoverDriver(object):
         if camera is None:
             print("Problem with selecting the camera in diamond pattern main.")
             return False
-        camera.data.clip_end = 300
+        camera.data.clip_end = 300000 * self.scale
         return True
 
     #############################################################

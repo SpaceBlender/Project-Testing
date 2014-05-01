@@ -151,7 +151,7 @@ class UI_Driver(bpy.types.Operator, ImportHelper):
                             mist=self.mist)
         ################################################################################
         ###############################Execute Flyovers#######################################
-        flyover = flyover_module.FlyoverDriver()
+        flyover = flyover_module.FlyoverDriver(self.scale)
         if self.flyover_pattern == "NoFlyover":
             print("Skipping flyover")
             flyover.no_flyover()

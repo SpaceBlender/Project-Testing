@@ -166,7 +166,7 @@ class TestMiscellaneousFunctions(unittest.TestCase):
         vals = flyover.get_dem_boundaries()
         x_max = vals[0]
         #check x y z positions
-        self.assertAlmostEqual(x_max[0], 32.0400009)
+        self.assertAlmostEqual(x_max[0], 31.92000007)
         self.assertAlmostEqual(x_max[1], -51.9000015)
         self.assertAlmostEqual(x_max[2], 5.97231769)
 
@@ -193,7 +193,7 @@ class TestMiscellaneousFunctions(unittest.TestCase):
         blender_module.DTMViewerRenderContext.clearScene(self)
         blender_module.load(self, None,
              filepath=dem,
-             scale=0.000001,
+             scale=0.001,
              bin_mode='BIN12-FAST',
              color_pattern='None',
              flyover_pattern='No flyover',
@@ -208,8 +208,8 @@ class TestMiscellaneousFunctions(unittest.TestCase):
         vals = flyover.get_dem_boundaries()
         x_max = vals[0]
         #check x y z positions
-        self.assertAlmostEqual(x_max[0], 32.0400009)
-        self.assertAlmostEqual(x_max[1], -51.9000015)
+        self.assertAlmostEqual(x_max[0], 3.1919999)
+        self.assertAlmostEqual(x_max[1], -5.18400001)
         self.assertAlmostEqual(x_max[2], 5.97231769)
 
         x_min = vals[1]
@@ -248,8 +248,8 @@ class TestMiscellaneousFunctions(unittest.TestCase):
         vals = flyover.get_dem_boundaries()
         x_max = vals[0]
         #check x y z positions
-        self.assertAlmostEqual(x_max[0], 32.0400009)
-        self.assertAlmostEqual(x_max[1], -51.9000015)
+        self.assertAlmostEqual(x_max[0], 3192.0)
+        self.assertAlmostEqual(x_max[1], -5184.0)
         self.assertAlmostEqual(x_max[2], 5.97231769)
 
         x_min = vals[1]
