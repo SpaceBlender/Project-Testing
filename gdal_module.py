@@ -33,7 +33,7 @@ class GDALDriver(object):
                         for char in outstr:
                             if char in " b'":
                                 outstr = outstr.replace(char, '')
-                            if char.isalpha() or char.isdigit():
+                            if char.isalpha():
                                 outstr = outstr.replace(char, '')
                             if char in "_'\-~()[]*=:":
                                 outstr = outstr.replace(char, '')
@@ -225,7 +225,7 @@ class GDALDriver(object):
                         for char in outstr:
                             if char in " b'":
                                 outstr = outstr.replace(char, '')
-                            if char.isalpha() or char.isdigit():
+                            if char.isalpha():
                                 outstr = outstr.replace(char, '')
                             if char in "_\-~()[]*=:":
                                 outstr = outstr.replace(char, '')
@@ -267,8 +267,10 @@ class GDALDriver(object):
                             elif count == 27 and not lock:
                                 outstr += '9'
                                 lock = True
+                            #A mysterious crash occurs here all the time on windows, so at this point i just print 100 and exit
+                            #This has somehing to do with the paths being passed in
                             elif count == 30 and not lock:
-                                outstr += '1'
+                                outstr += '100.'
                                 lock = True
 
                         sys.stdout.write(outstr)
